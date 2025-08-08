@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://libretto/schemas/events/template-applied.schema.json",
+  "title": "TemplateApplied",
+  "type": "object",
+  "required": ["templateId", "parameters", "graphVersionId"],
+  "properties": {
+    "templateId": { "type": "string" },
+    "parameters": { "type": "object", "additionalProperties": true },
+    "graphVersionId": { "type": "string" }
+  },
+  "additionalProperties": false
+}
+

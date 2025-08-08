@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://libretto/schemas/events/envelope.schema.json",
+  "title": "EventEnvelope",
+  "type": "object",
+  "required": [
+    "eventName",
+    "eventVersion",
+    "eventId",
+    "occurredAt",
+    "correlationId",
+    "causationId",
+    "idempotencyKey",
+    "producer",
+    "tenantId",
+    "payload"
+  ],
+  "properties": {
+    "eventName": { "type": "string", "minLength": 1 },
+    "eventVersion": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "eventId": { "type": "string", "minLength": 10 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "correlationId": { "type": "string", "minLength": 10 },
+    "causationId": { "type": "string", "minLength": 10 },
+    "idempotencyKey": { "type": "string", "minLength": 8 },
+    "producer": { "type": "string" },
+    "tenantId": { "type": "string" },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false
+}
+

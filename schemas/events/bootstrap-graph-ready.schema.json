@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://libretto/schemas/events/bootstrap-graph-ready.schema.json",
+  "title": "BootstrapGraphReady",
+  "type": "object",
+  "required": ["graphVersionId"],
+  "properties": {
+    "graphVersionId": { "type": "string" }
+  },
+  "additionalProperties": false
+}
+
