@@ -1,0 +1,19 @@
+syntax = "proto3";
+package libretto.baton.v1;
+
+option go_package = "github.com/barrynorthern/libretto/gen/go/libretto/baton/v1;batonv1";
+
+message IssueDirectiveRequest {
+  string text = 1;
+  string act = 2;
+  string target = 3;
+}
+
+message IssueDirectiveResponse {
+  string correlation_id = 1;
+}
+
+service BatonService {
+  rpc IssueDirective(IssueDirectiveRequest) returns (IssueDirectiveResponse);
+}
+

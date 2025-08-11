@@ -1,0 +1,31 @@
+syntax = "proto3";
+package libretto.events.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/barrynorthern/libretto/gen/go/libretto/events/v1;eventsv1";
+
+message Envelope {
+  string event_name = 1;
+  string event_version = 2;
+  string event_id = 3;
+  string correlation_id = 4;
+  string causation_id = 5;
+  string idempotency_key = 6;
+  string producer = 7;
+  string tenant_id = 8;
+  google.protobuf.Timestamp occurred_at = 9;
+}
+
+message DirectiveIssued {
+  string text = 1;
+  string act = 2;
+  string target = 3;
+}
+
+message SceneProposalReady {
+  string scene_id = 1;
+  string title = 2;
+  string summary = 3;
+}
+
