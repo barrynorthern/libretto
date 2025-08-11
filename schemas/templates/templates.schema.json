@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://libretto/schemas/templates/templates.schema.json",
+  "title": "TemplateDefinition",
+  "type": "object",
+  "required": ["id", "name", "parameters", "outputs"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "genre": { "type": "string" },
+        "tone": { "type": "string" },
+        "theme": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["op", "entityType", "entity"],
+        "properties": {
+          "op": { "type": "string", "enum": ["create"] },
+          "entityType": { "type": "string", "enum": ["Arc", "Beat", "Scene", "Character"] },
+          "entity": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
+
