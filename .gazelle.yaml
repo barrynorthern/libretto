@@ -1,0 +1,6 @@
+# Gazelle configuration
+# This file allows running `bazel run //:gazelle` to update BUILD files.
+
+# Set the Go prefix (module import path)
+go_prefix: github.com/barrynorthern/libretto
+
