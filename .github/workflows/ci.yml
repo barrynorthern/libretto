@@ -3,7 +3,8 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main, '**/*' ]
+    branches:
+      - '**'
 
 jobs:
   bazel-build:
@@ -39,7 +40,4 @@ jobs:
         run: bazel version
       - name: Test all targets
         run: bazel test //... --test_output=errors
-
-        run: npx -y ajv validate -s "schemas/**/*.json" --strict=false || true
-        # Note: ajv returns non-zero if no data is provided; we allow it to pass for schema-only validation.
 
