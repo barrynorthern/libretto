@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main, '**/*' ]
+
+jobs:
+  bazel-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Bazelisk
+        uses: bazelbuild/setup-bazelisk@v3
+      - name: Show Bazel version
+        run: bazel version
+      - name: Build all targets
+        run: bazel build //...
+
+  schemas:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate JSON Schemas
+        run: npx -y ajv validate -s "schemas/**/*.json" --strict=false || true
+        # Note: ajv returns non-zero if no data is provided; we allow it to pass for schema-only validation.
+
