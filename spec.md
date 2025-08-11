@@ -73,10 +73,10 @@ This experience is built on a modern, real-time, serverless architecture designe
 | :--- | :--- | :--- |
 | **Conductor's Console** | Next.js (React) with TypeScript | A high-performance web framework for building the rich, interactive, and visual Orchestration Canvas. |
 | **Real-time State Sync** | **Firestore** & **WebSockets on Cloud Run** | Firestore serves as the real-time database for the "Living Narrative" graph, allowing agents and the Console to stay in sync. WebSockets provide the low-latency communication channel for pushing updates from the agents to the UI. |
-| **Structured Data Store** | **Cloud SQL for PostgreSQL** + **sqlc** | Cloud SQL provides a robust, ACID-compliant relational database for user accounts, project settings, and billing. `sqlc` generates type-safe TypeScript clients from raw SQL, ensuring data integrity and a superior developer experience. |
+| **Structured Data Store** | **Cloud SQL for PostgreSQL** + **sqlc (Go)** | Cloud SQL provides a robust, ACID-compliant relational database for user accounts, project settings, and billing. `sqlc` generates type-safe Go clients from raw SQL to ensure data integrity and a superior developer experience. |
 | **Narrative Event Bus** | **Cloud Pub/Sub** | A fully managed, scalable messaging service that forms the backbone of the event-driven architecture. It decouples all agents, allowing them to operate asynchronously and resiliently. |
 | **AI Orchestra Platform** | **Vertex AI Agent Builder** | The central platform for building, deploying, and managing the individual agents. The **Agent Development Kit (ADK)** will be used to define agent logic and tools. |
-| **Agent Logic Execution** | **Cloud Functions** | Each specialist agent's core logic is deployed as a separate, serverless Cloud Function, triggered by messages on its subscribed Pub/Sub topic. This provides perfect isolation, infinite scalability, and cost-efficiency. |
+| **Agent Logic Execution** | **Cloud Run (Go)** | Each specialist agent's core logic is deployed as a separate, serverless Go service on Cloud Run with Pub/Sub push subscriptions. This provides isolation, scalability, and consistent tooling across backend services. |
 | **Narrative Knowledge (RAG)** | **Vertex AI Vector Search** | The 'World Architect' and 'Continuity Steward' agents are powered by RAG. The Living Narrative data from Firestore is continuously embedded and indexed in Vector Search, allowing these agents to perform deep, semantic searches across the entire story world. |
 
 #### 4.2 Architectural Flow: A Conductor's Directive
@@ -101,6 +101,12 @@ The loss of creative work or state is a catastrophic failure. The system is arch
 | **FR-4.3.2** | Event-Driven | When a complex directive is issued that requires a sequence of steps, the system **shall** use **Google Cloud Workflows** to orchestrate the chain of agent invocations, ensuring that the overall process state is persisted at every step. [8] |
 | **FR-4.3.3** | Ubiquitous | The system **shall** use Firestore's transactional capabilities to ensure that all changes to the Living Narrative graph and the Conductor's view state are saved atomically and durably. [10] |
 | **FR-4.3.4** | Ubiquitous | The system **shall** implement a robust checkpointing mechanism for agent workflows, allowing a process to be resumed from the last successful step in the event of a transient failure in a downstream service or agent. [9, 11] |
+
+
+#### 4.4 Build & Repo Strategy (Monorepo)
+- Backend services and agents: Go 1.22+ built with Bazel (rules_go, gazelle). Deployed to Cloud Run with Pub/Sub push.
+- Frontend: Next.js (TypeScript) built initially with package scripts; may be brought under Bazel (rules_nodejs) later.
+- Monorepo: Shared contracts and schemas live in a central package and are code-generated for Go (and TS for the FE) as needed.
 
 ### 5.0 v1.1 Addendum: Canonical Specifications for Implementation
 
