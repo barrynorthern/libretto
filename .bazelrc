@@ -1,0 +1,4 @@
+build --enable_bzlmod
+query --enable_bzlmod
+run --enable_bzlmod
+
