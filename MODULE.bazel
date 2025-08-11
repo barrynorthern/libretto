@@ -1,0 +1,11 @@
+module(name = "libretto")
+
+bazel_dep(name = "rules_go", version = "0.48.0", repo_name = "io_bazel_rules_go")
+bazel_dep(name = "gazelle",  version = "0.36.0", repo_name = "bazel_gazelle")
+
+# Register Go SDK via Bzlmod (rules_go extension)
+# See: https://github.com/bazelbuild/rules_go#bzlmod
+_go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
+_go_sdk.download(name = "go_sdk", version = "1.22.5")
+use_repo(_go_sdk, "go_sdk")
+

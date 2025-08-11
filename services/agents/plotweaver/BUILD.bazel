@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "plotweaver_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/barrynorthern/libretto/services/agents/plotweaver",
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "plotweaver",
+    embed = [":plotweaver_lib"],
+    visibility = ["//visibility:public"],
+)
+
