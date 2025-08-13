@@ -14,3 +14,9 @@ use_repo(_go_sdk, "go_sdk")
 # Import Go module deps from go.mod using Gazelle's go_deps extension
 _go_deps = use_extension("@bazel_gazelle//:extensions.bzl", "go_deps")
 _go_deps.from_file(go_mod = "//:go.mod")
+use_repo(_go_deps,
+    "com_connectrpc_connect",
+    "com_github_google_uuid",
+    "org_golang_google_protobuf",
+)
+
