@@ -1,0 +1,26 @@
+syntax = "proto3";
+package libretto.graph.v1;
+
+option go_package = "github.com/barrynorthern/libretto/gen/go/libretto/graph/v1;graphv1";
+
+message Delta {
+  string op = 1; // e.g., "create"
+  string entity_type = 2; // e.g., "Scene"
+  string entity_id = 3;
+  map<string, string> fields = 4; // MVP simplification
+}
+
+message ApplyRequest {
+  string parent_version_id = 1;
+  repeated Delta deltas = 2;
+}
+
+message ApplyResponse {
+  string graph_version_id = 1;
+  int32 applied = 2;
+}
+
+service GraphWriteService {
+  rpc Apply(ApplyRequest) returns (ApplyResponse);
+}
+
