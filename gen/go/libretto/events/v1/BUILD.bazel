@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "events_v1",
+    srcs = ["events.pb.go"],
+    importpath = "github.com/barrynorthern/libretto/gen/go/libretto/events/v1",
+    visibility = ["//visibility:public"],
+)
+

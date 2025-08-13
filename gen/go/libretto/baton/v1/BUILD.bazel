@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "baton_v1",
+    srcs = ["baton.pb.go"],
+    importpath = "github.com/barrynorthern/libretto/gen/go/libretto/baton/v1",
+    visibility = ["//visibility:public"],
+)
+

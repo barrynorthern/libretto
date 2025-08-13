@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graph_v1_connect",
+    srcs = ["graphwrite.connect.go"],
+    importpath = "github.com/barrynorthern/libretto/gen/go/libretto/graph/v1/graphv1connect",
+    visibility = ["//visibility:public"],
+)
+
