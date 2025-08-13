@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/barrynorthern/libretto/gen/go/libretto/baton/v1/batonv1connect",
     deps = [
         "//gen/go/libretto/baton/v1:baton_v1",
-        "@go_deps//:connectrpc.com/connect",
+        "@com_connectrpc_connect//:connectrpc.com/connect",
     ],
     visibility = ["//visibility:public"],
 )
