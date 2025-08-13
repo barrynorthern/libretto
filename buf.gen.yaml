@@ -1,17 +1,14 @@
-version: v2
+version: v1
 plugins:
-  - name: buf.build/protocolbuffers/go
+  - plugin: buf.build/protocolbuffers/go
     out: gen/go
-    opt:
-      - paths=source_relative
-  - name: buf.build/connectrpc/go
+    opt: paths=source_relative
+  - plugin: buf.build/connectrpc/go
     out: gen/go
-    opt:
-      - paths=source_relative
-  - name: buf.build/bufbuild/es
+    opt: paths=source_relative
+  - plugin: buf.build/bufbuild/es
     out: gen/ts
-    opt:
-      - target=ts
-  - name: buf.build/connectrpc/es
+    opt: target=ts
+  - plugin: buf.build/connectrpc/es
     out: gen/ts
 
