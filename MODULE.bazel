@@ -9,3 +9,9 @@ _go_sdk = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_sdk")
 _go_sdk.download(name = "go_sdk", version = "1.22.5")
 use_repo(_go_sdk, "go_sdk")
 
+
+
+# Import Go module deps from go.mod using rules_go go_deps extension
+_go_deps = use_extension("@io_bazel_rules_go//go:extensions.bzl", "go_deps")
+_go_deps.from_file(name = "go_deps", go_mod = "//:go.mod")
+use_repo(_go_deps, "go_deps")

@@ -4,9 +4,8 @@ go_library(
     name = "api_lib",
     srcs = [
         "main.go",
-        "baton/handler.go",
         "publisher/publisher.go",
-        "../../packages/contracts/events/envelope.go",
+        "server/baton_server.go",
     ],
     importpath = "github.com/barrynorthern/libretto/services/api",
     visibility = ["//visibility:private"],
