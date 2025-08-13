@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+# Internal contracts/events package
+# Provides the generic Envelope type used for event publishing
+
+go_library(
+    name = "events",
+    srcs = ["envelope.go"],
+    importpath = "github.com/barrynorthern/libretto/packages/contracts/events",
+    visibility = ["//visibility:public"],
+)
+
