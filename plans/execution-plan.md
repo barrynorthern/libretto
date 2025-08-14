@@ -4,6 +4,12 @@
 - Deliver an end-to-end slice: Baton -> Event Bus -> Agents -> GraphWrite -> Firestore -> Canvas/Inspector.
 - Establish platform primitives: canonical data model, Event Schema Registry, Agent Contract, observability, safety rails, and export.
 
+## Iteration tracking
+- We track work in numbered iteration tickets under `plans/tickets/` (e.g., 00000-..., 00001-..., 00002-...).
+- Each ticket includes: context, scope, acceptance criteria, links to FRs/NFRs (spec.md), and outcomes/notes.
+- This execution plan remains high level; iteration tickets capture the evolving details as we proceed.
+
+
 ## Architectural decisions
 - Canonical store: Firestore + Graph Service with denormalized adjacency indexes (Path A).
 - Orchestration: Google Cloud Workflows for MVP; design interfaces Temporal-ready.
