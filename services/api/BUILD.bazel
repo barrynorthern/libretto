@@ -50,5 +50,6 @@ go_test(
     name = "api_test",
     srcs = ["main_test.go"],
     embed = [":api_lib"],
+    size = "small",
 )
 
