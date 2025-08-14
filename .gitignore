@@ -19,3 +19,10 @@ terraform.tfstate*
 .vscode/
 .idea/
 
+
+
+# Bazel outputs and symlinks
+/bazel-*
+/bazel-bin
+/bazel-out
+/bazel-testlogs
