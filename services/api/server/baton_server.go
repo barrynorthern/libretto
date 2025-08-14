@@ -8,7 +8,6 @@ import (
 	"connectrpc.com/connect"
 	batonv1 "github.com/barrynorthern/libretto/gen/go/libretto/baton/v1"
 	"github.com/barrynorthern/libretto/gen/go/libretto/baton/v1/batonv1connect"
-	eventsv1 "github.com/barrynorthern/libretto/gen/go/libretto/events/v1"
 	"github.com/google/uuid"
 )
 
@@ -47,4 +46,3 @@ func (s *BatonServer) IssueDirective(ctx context.Context, req *connect.Request[b
 	res := connect.NewResponse(&batonv1.IssueDirectiveResponse{CorrelationId: env["correlationId"].(string)})
 	return res, nil
 }
-
