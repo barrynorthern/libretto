@@ -32,8 +32,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up buf
+      - name: Set up buf (with token if available to avoid rate limits)
         uses: bufbuild/buf-setup-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
       - name: Lint protos
         run: buf lint
       - name: Generate code

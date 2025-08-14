@@ -68,3 +68,28 @@ A multi-agent narrative orchestration engine where the user (the Conductor) dire
 - Review the GraphWrite API and Bootstrap Helper drafts under /docs
 - See plans/execution-plan.md for phased delivery and DoD
 
+## Running the MVP services locally
+
+- Build: `bazel build //...`
+- Test: `bazel test //... --test_output=errors`
+
+Run API (Connect RPC) on port 8080 by default:
+
+- PORT=8080 bazel run //services/api:api
+- Health: curl http://localhost:8080/healthz
+- Issue directive (Connect route):
+  - curl -sS -X POST -H 'Content-Type: application/json' \
+    --data '{"text":"Introduce a betrayal","act":"2","target":"protagonist"}' \
+    http://localhost:8080/libretto.baton.v1.BatonService/IssueDirective
+
+Run Plot Weaver (stub) on a different port to avoid collisions (defaults to 8081):
+
+- PORT=8081 bazel run //services/agents/plotweaver:plotweaver
+- Trigger stub handler:
+  - curl -sS -X POST http://localhost:8081/ | cat
+
+Notes:
+- Both services respect the PORT env var (API default 8080; Plot Weaver default 8081)
+- Current implementation publishes/logs events locally; no real bus or Firestore wiring yet
+
+

@@ -104,6 +104,15 @@ The loss of creative work or state is a catastrophic failure. The system is arch
 
 
 #### 4.4 Build & Repo Strategy (Monorepo)
+
+#### 4.4.1 Service Port Configuration (Local & Cloud Run)
+- All HTTP services (API and agents) shall accept the port via the standard `PORT` environment variable.
+- Default local ports to avoid collisions:
+  - API: 8080
+  - Plot Weaver: 8081
+- Runtimes: Cloud Run sets `PORT` automatically; local dev must set `PORT` explicitly when running multiple services.
+- Future agents should follow this pattern and reserve successive ports as needed; document assignments in README.
+
 - Backend services and agents: Go 1.22+ built with Bazel (rules_go, gazelle). Deployed to Cloud Run with Pub/Sub push.
 - Frontend: Next.js (TypeScript) built initially with package scripts; may be brought under Bazel (rules_nodejs) later.
 - Monorepo: Shared contracts and schemas live in a central package and are code-generated for Go (and TS for the FE) as needed.

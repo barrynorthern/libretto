@@ -2,8 +2,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "plotweaver_lib",
-    srcs = ["main.go"],
+    srcs = ["main.go", "handler.go"],
     importpath = "github.com/barrynorthern/libretto/services/agents/plotweaver",
+    deps = [
+        "@com_github_google_uuid//:go_default_library",
+    ],
     visibility = ["//visibility:private"],
 )
 

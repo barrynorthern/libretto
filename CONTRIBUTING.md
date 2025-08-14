@@ -28,10 +28,15 @@ Thank you for contributing. This repo follows Spec‑Driven Development.
 - Conventional-ish style preferred: feat:, fix:, chore:, docs:, refactor:, test:, infra:
 - Reference FR ids, e.g. "feat(FR-6.1): bootstrap wizard template selection UI"
 
-## Running validation locally (to be expanded)
-- JSON schema validation (ajv): npm run validate:schemas (placeholder)
-- Lint/tests: npm test (placeholder)
-- Firestore rules tests: npm run test:rules (placeholder)
+## Running validation locally
+- Ensure you have Bazelisk installed (brew install bazelisk)
+- Repo pins Bazel via .bazelversion to keep local and CI aligned
+- Typical local flow (mirrors CI):
+  - bazel version
+  - bazel build //...
+  - bazel test //... --test_output=errors
+- When adding imports or generating code, update BUILD files with Gazelle:
+  - bazel run //:gazelle
 
 ## Code of Conduct
 - Be respectful and constructive. Assume positive intent. Focus on clarity and testability.

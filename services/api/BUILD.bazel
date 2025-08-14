@@ -1,9 +1,42 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
+# Internal publisher package
+
+go_library(
+    name = "publisher",
+    srcs = ["publisher/publisher.go"],
+    importpath = "github.com/barrynorthern/libretto/services/api/publisher",
+    visibility = ["//visibility:public"],
+)
+
+# Internal server package implementing Baton service
+
+go_library(
+    name = "server",
+    srcs = ["server/baton_server.go"],
+    importpath = "github.com/barrynorthern/libretto/services/api/server",
+    deps = [
+        "//gen/go/libretto/baton/v1:baton_v1",
+        "//gen/go/libretto/baton/v1/batonv1connect:baton_v1_connect",
+        "//gen/go/libretto/events/v1:events_v1",
+        "@com_connectrpc_connect//:go_default_library",
+        "@com_github_google_uuid//:go_default_library",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Main package
+
 go_library(
     name = "api_lib",
     srcs = ["main.go"],
     importpath = "github.com/barrynorthern/libretto/services/api",
+    deps = [
+        ":publisher",
+        ":server",
+        "//gen/go/libretto/baton/v1/batonv1connect:baton_v1_connect",
+        "@com_connectrpc_connect//:go_default_library",
+    ],
     visibility = ["//visibility:private"],
 )
 
@@ -17,5 +50,6 @@ go_test(
     name = "api_test",
     srcs = ["main_test.go"],
     embed = [":api_lib"],
+    size = "small",
 )
 
