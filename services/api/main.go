@@ -20,7 +20,13 @@ func healthMux() *http.ServeMux {
 }
 
 func main() {
-	addr := ":8080"
+	// Configure port via PORT env var (default 8080)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := ":" + port
+
 	topic := os.Getenv("DIRECTIVE_TOPIC")
 	if topic == "" {
 		topic = "libretto.dev.directive.issued.v1"
