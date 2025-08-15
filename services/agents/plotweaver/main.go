@@ -8,6 +8,10 @@ import (
 
 func main() {
 	http.HandleFunc("/", handler)
+	http.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
 	// Configure port via PORT env var (default 8081 to avoid clashing with API)
 	port := os.Getenv("PORT")
 	if port == "" {
