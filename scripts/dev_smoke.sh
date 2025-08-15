@@ -12,35 +12,43 @@ bold() { printf "\033[1m%s\033[0m" "$1"; }
 green() { printf "\033[32m%s\033[0m" "$1"; }
 red() { printf "\033[31m%s\033[0m" "$1"; }
 
-check() {
+http_check() {
   local name="$1"; shift
-  local cmd=("$@")
-  if output="$(${cmd[@]} 2>/dev/null)"; then
+  local method="$1"; shift
+  local url="$1"; shift
+  local data="${1:-}"
+  local tmp
+  tmp=$(mktemp)
+  local http
+  if [ -n "$data" ]; then
+    http=$(curl -sS -o "$tmp" -w "%{http_code}" -X "$method" -H 'Content-Type: application/json' --data "$data" "$url" || true)
+  else
+    http=$(curl -sS -o "$tmp" -w "%{http_code}" -X "$method" "$url" || true)
+  fi
+  if [ "$http" = "200" ]; then
     echo "$(green "✔") $(bold "$name")"
+    PASS=$((PASS+1))
   else
     echo "$(red "✘") $(bold "$name")" >&2
-    echo "$output" >&2 || true
+    echo "Status: $http" >&2
+    echo "Body:" >&2
+    sed -e 's/.*/  &/' "$tmp" >&2 || true
     FAIL=$((FAIL+1))
-    return 1
   fi
-  PASS=$((PASS+1))
+  rm -f "$tmp"
 }
 
 # API health
-check "API health" curl -sS "http://localhost:${API_PORT}/healthz"
+http_check "API health" GET "http://localhost:${API_PORT}/healthz"
 
-# Baton IssueDirective (expect correlation_id)
-check "Baton IssueDirective" curl -sS -X POST -H 'Content-Type: application/json' \
-  --data '{"text":"Introduce a betrayal","act":"2","target":"protagonist"}' \
-  "http://localhost:${API_PORT}/libretto.baton.v1.BatonService/IssueDirective"
+# Baton IssueDirective (expect 200)
+http_check "Baton IssueDirective" POST "http://localhost:${API_PORT}/libretto.baton.v1.BatonService/IssueDirective" '{"text":"Introduce a betrayal","act":"2","target":"protagonist"}'
 
-# Plot Weaver stub
-check "Plot Weaver stub" curl -sS -X POST "http://localhost:${PLOT_PORT}/"
+# Plot Weaver stub (expect 200)
+http_check "Plot Weaver stub" POST "http://localhost:${PLOT_PORT}/"
 
-# GraphWrite Apply (expect graphVersionId)
-check "GraphWrite Apply" curl -sS -X POST -H 'Content-Type: application/json' \
-  --data '{"parentVersionId":"01JROOT","deltas":[{"op":"create","entityType":"Scene","entityId":"sc-1","fields":{"title":"Test"}}]}' \
-  "http://localhost:${GRAPHWRITE_PORT}/libretto.graph.v1.GraphWriteService/Apply"
+# GraphWrite Apply (expect 200)
+http_check "GraphWrite Apply" POST "http://localhost:${GRAPHWRITE_PORT}/libretto.graph.v1.GraphWriteService/Apply" '{"parentVersionId":"01JROOT","deltas":[{"op":"create","entityType":"Scene","entityId":"sc-1","fields":{"title":"Test"}}]}'
 
 TOTAL=$((PASS+FAIL))
 
