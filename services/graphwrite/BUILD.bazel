@@ -1,0 +1,48 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+# Server package
+
+go_library(
+    name = "server",
+    srcs = [
+        "server/server.go",
+    ],
+    importpath = "github.com/barrynorthern/libretto/services/graphwrite/server",
+    deps = [
+        "//gen/go/libretto/graph/v1:graph_v1",
+        "//gen/go/libretto/graph/v1/graphv1connect:graph_v1_connect",
+        "@com_connectrpc_connect//:go_default_library",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Binary
+
+go_library(
+    name = "graphwrite_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/barrynorthern/libretto/services/graphwrite",
+    deps = [
+        ":server",
+        "//gen/go/libretto/graph/v1:graph_v1",
+        "//gen/go/libretto/graph/v1/graphv1connect:graph_v1_connect",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+go_binary(
+    name = "graphwrite",
+    embed = ["graphwrite_lib"],
+    visibility = ["//visibility:public"],
+)
+
+# Tests
+
+go_test(
+    name = "server_test",
+    srcs = [
+        "server/server_test.go",
+    ],
+    embed = ["server"],
+)
+

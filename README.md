@@ -73,6 +73,14 @@ A multi-agent narrative orchestration engine where the user (the Conductor) dire
 - Build: `bazel build //...`
 - Test: `bazel test //... --test_output=errors`
 
+### One command (recommended)
+- ./scripts/dev_up.sh
+  - Starts API (8080), Plot Weaver (8081), GraphWrite (8082) — override with API_PORT/PLOT_PORT/GRAPHWRITE_PORT
+  - Stop with Ctrl+C
+- ./scripts/dev_smoke.sh
+  - Runs basic curl smoke checks against all services
+
+### Manual runs (if needed)
 Run API (Connect RPC) on port 8080 by default:
 
 - PORT=8080 bazel run //services/api:api
@@ -88,8 +96,16 @@ Run Plot Weaver (stub) on a different port to avoid collisions (defaults to 8081
 - Trigger stub handler:
   - curl -sS -X POST http://localhost:8081/ | cat
 
+Run GraphWrite (skeleton) on a different port to avoid collisions (defaults to 8082):
+
+- PORT=8082 bazel run //services/graphwrite:graphwrite
+- Apply deltas (Connect route):
+  - curl -sS -X POST -H 'Content-Type: application/json' \
+    --data '{"parentVersionId":"01JROOT","deltas":[{"op":"create","entityType":"Scene","entityId":"sc-1","fields":{"title":"Test"}}]}' \
+    http://localhost:8082/libretto.graph.v1.GraphWriteService/Apply
+
 Notes:
-- Both services respect the PORT env var (API default 8080; Plot Weaver default 8081)
+- All services respect the PORT env var (API 8080; Plot Weaver 8081; GraphWrite 8082)
 - Current implementation publishes/logs events locally; no real bus or Firestore wiring yet
 
 
