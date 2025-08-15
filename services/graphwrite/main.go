@@ -15,6 +15,11 @@ func main() {
 	svc := &gwserver.GraphWriteServer{Store: store}
 	mux.Handle(graphv1connect.NewGraphWriteServiceHandler(svc))
 
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8082"
