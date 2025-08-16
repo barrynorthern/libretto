@@ -2,13 +2,51 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type pushEnvelope struct {
+	Message struct {
+		Data       string            `json:"data"`
+		Attributes map[string]string `json:"attributes"`
+		MessageID  string            `json:"messageId"`
+	} `json:"message"`
+	Subscription string `json:"subscription"`
+}
+
+// pushHandler accepts Pub/Sub push messages. For now, it logs the decoded event envelope
+// and responds 200. It coexists with the existing root handler used in local stub flows.
+func pushHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "read error", http.StatusBadRequest)
+		return
+	}
+	var env pushEnvelope
+	if err := json.Unmarshal(body, &env); err != nil {
+		http.Error(w, "invalid push envelope", http.StatusBadRequest)
+		return
+	}
+	dec, err := base64.StdEncoding.DecodeString(env.Message.Data)
+	if err != nil {
+		http.Error(w, "invalid base64 data", http.StatusBadRequest)
+		return
+	}
+	log.Printf("plotweaver: received push messageId=%s attrs=%v payload=%s", env.Message.MessageID, env.Message.Attributes, string(dec))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write([]byte("ok"))
+}
 
 type PubSubMessage struct {
 	Message struct {
@@ -50,4 +88,3 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("ok"))
 }
-
