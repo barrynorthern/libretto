@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"connectrpc.com/connect"
 	graphv1 "github.com/barrynorthern/libretto/gen/go/libretto/graph/v1"
@@ -18,12 +19,15 @@ func (s *InMemoryStore) Apply(parent string, deltas []*graphv1.Delta) (string, i
 
 type GraphWriteServer struct {
 	graphv1connect.UnimplementedGraphWriteServiceHandler
-	Store interface{
+	Store interface {
 		Apply(parent string, deltas []*graphv1.Delta) (string, int32, error)
 	}
 }
 
 func (s *GraphWriteServer) Apply(ctx context.Context, req *connect.Request[graphv1.ApplyRequest]) (*connect.Response[graphv1.ApplyResponse], error) {
+	if len(req.Msg.GetDeltas()) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no deltas provided"))
+	}
 	version, count, err := s.Store.Apply(req.Msg.GetParentVersionId(), req.Msg.GetDeltas())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -31,4 +35,3 @@ func (s *GraphWriteServer) Apply(ctx context.Context, req *connect.Request[graph
 	res := connect.NewResponse(&graphv1.ApplyResponse{GraphVersionId: version, Applied: count})
 	return res, nil
 }
-
