@@ -29,12 +29,18 @@ Thank you for contributing. This repo follows Spec‑Driven Development.
 - Reference FR ids, e.g. "feat(FR-6.1): bootstrap wizard template selection UI"
 
 ## Running validation locally
-- Ensure you have Bazelisk installed (brew install bazelisk)
-- Repo pins Bazel via .bazelversion to keep local and CI aligned
+- Prefer Make targets for all local workflows. Scripts are implementation details.
+- Ensure you have Bazelisk installed (brew install bazelisk). Bazel is pinned via .bazelversion.
 - Typical local flow (mirrors CI):
-  - bazel version
-  - bazel build //...
-  - bazel test //... --test_output=errors
+  - make build
+  - make test
+- Local dev stack:
+  - make dev-up      # starts API, Plot Weaver, GraphWrite on dev ports; Ctrl+C to stop
+  - make dev-smoke   # runs smoke checks (colorized pass/fail)
+  - make matrix      # runs smoke in both modes: default (NOP) and PUBSUB_ENABLED=true
+- Env overrides:
+  - API_PORT=8090 PLOT_PORT=8091 GRAPHWRITE_PORT=8092 make dev-up
+  - PUBSUB_ENABLED=true make dev-smoke
 - When adding imports or generating code, update BUILD files with Gazelle:
   - bazel run //:gazelle
 

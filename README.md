@@ -70,39 +70,27 @@ A multi-agent narrative orchestration engine where the user (the Conductor) dire
 
 ## Running the MVP services locally
 
-- Build: `bazel build //...`
-- Test: `bazel test //... --test_output=errors`
+- Build: `make build`
+- Test: `make test`
 
 ### One command (recommended)
-- ./scripts/dev_up.sh
-  - Starts API (8080), Plot Weaver (8081), GraphWrite (8082) — override with API_PORT/PLOT_PORT/GRAPHWRITE_PORT
+- `make dev-up`
+  - Starts API (8080), Plot Weaver (8081), GraphWrite (8082)
+  - Override with env: `API_PORT=8090 PLOT_PORT=8091 GRAPHWRITE_PORT=8092 make dev-up`
+  - Publisher selection: set `PUBSUB_ENABLED=true` to select Pub/Sub publisher (otherwise NOP)
   - Stop with Ctrl+C
-- ./scripts/dev_smoke.sh
-  - Runs basic curl smoke checks against all services
+- `make dev-smoke`
+  - Runs smoke checks; API logs indicate `publisher=pubsub|nop`
+
+### Verification matrix
+- `make matrix`
+  - Runs smoke checks twice: once with default (NOP) and once with `PUBSUB_ENABLED=true`
 
 ### Manual runs (if needed)
-Run API (Connect RPC) on port 8080 by default:
-
-- PORT=8080 bazel run //services/api:api
-- Health: curl http://localhost:8080/healthz
-- Issue directive (Connect route):
-  - curl -sS -X POST -H 'Content-Type: application/json' \
-    --data '{"text":"Introduce a betrayal","act":"2","target":"protagonist"}' \
-    http://localhost:8080/libretto.baton.v1.BatonService/IssueDirective
-
-Run Plot Weaver (stub) on a different port to avoid collisions (defaults to 8081):
-
-- PORT=8081 bazel run //services/agents/plotweaver:plotweaver
-- Trigger stub handler:
-  - curl -sS -X POST http://localhost:8081/ | cat
-
-Run GraphWrite (skeleton) on a different port to avoid collisions (defaults to 8082):
-
-- PORT=8082 bazel run //services/graphwrite:graphwrite
-- Apply deltas (Connect route):
-  - curl -sS -X POST -H 'Content-Type: application/json' \
-    --data '{"parentVersionId":"01JROOT","deltas":[{"op":"create","entityType":"Scene","entityId":"sc-1","fields":{"title":"Test"}}]}' \
-    http://localhost:8082/libretto.graph.v1.GraphWriteService/Apply
+Prefer Make targets above. For reference only:
+- API: `PORT=8080 bazel run //services/api:api`
+- Plot Weaver: `PORT=8081 bazel run //services/agents/plotweaver:plotweaver`
+- GraphWrite: `PORT=8082 bazel run //services/graphwrite:graphwrite`
 
 Notes:
 - All services respect the PORT env var (API 8080; Plot Weaver 8081; GraphWrite 8082)

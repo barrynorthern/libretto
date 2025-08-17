@@ -8,7 +8,23 @@ import (
 	graphv1 "github.com/barrynorthern/libretto/gen/go/libretto/graph/v1"
 )
 
-type fakeStore struct{ version string; count int32; err error }
+func TestApplyRejectsEmptyDeltas(t *testing.T) {
+	s := &GraphWriteServer{Store: fakeStore{version: "01JF00", count: 0}}
+	req := connect.NewRequest(&graphv1.ApplyRequest{ParentVersionId: "01JROOT", Deltas: []*graphv1.Delta{}})
+	_, err := s.Apply(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error for empty deltas")
+	}
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("expected invalid argument, got %v", connect.CodeOf(err))
+	}
+}
+
+type fakeStore struct {
+	version string
+	count   int32
+	err     error
+}
 
 func (f fakeStore) Apply(parent string, deltas []*graphv1.Delta) (string, int32, error) {
 	return f.version, f.count, f.err
@@ -28,4 +44,3 @@ func TestApplySuccess(t *testing.T) {
 		t.Fatalf("applied got %d want %d", got, want)
 	}
 }
-

@@ -37,7 +37,14 @@ func main() {
 	}
 
 	mux := healthMux()
-	pub := publisher.NopPublisher{}
+	pub := publisher.Select()
+	// Log which publisher we selected for visibility during manual tests
+	switch pub.(type) {
+	case publisher.PubSubPublisher:
+		log.Printf("publisher=pubsub topic=%s", topic)
+	default:
+		log.Printf("publisher=nop topic=%s", topic)
+	}
 	svc := &apiserver.BatonServer{Pub: pub, Topic: topic, Producer: producer}
 	mux.Handle(batonv1connect.NewBatonServiceHandler(svc))
 
