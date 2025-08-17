@@ -1,9 +1,9 @@
 # 002 – Wire Pub/Sub and GraphWrite skeleton for persistence (next)
 
-Status: In Progress
+Status: Done (merged)
 Owner: barrynorthern
 Start: TBC
-Date completed: pending
+Date completed: 2025-08-17
 
 ## Goal
 Turn the stubbed event path into a real pipeline by introducing Pub/Sub publisher for API, Pub/Sub push handler for Plot Weaver, and a GraphWrite service skeleton that persists versions/deltas in-memory (or to Firestore if ready).
