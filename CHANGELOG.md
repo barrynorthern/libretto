@@ -16,7 +16,9 @@
 [19a2a42]: https://github.com/barrynorthern/libretto/commit/19a2a42
 [7e3cad7]: https://github.com/barrynorthern/libretto/commit/7e3cad7
 
-## Next
-- Wire Pub/Sub and GraphWrite skeleton for persistence (proposed)
+## 2025-08-17
+- Wire Pub/Sub and GraphWrite skeleton for persistence ([PR #9])
   - See plans/tickets/00002-wire-pubsub-and-graphwrite-skeleton-for-persistence.md
+
+[PR #9]: https://github.com/barrynorthern/libretto/pull/9
 
