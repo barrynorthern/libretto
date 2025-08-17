@@ -63,7 +63,7 @@ echo "- API:          http://localhost:${API_PORT}"
 echo "- Plot Weaver:  http://localhost:${PLOT_PORT}"
 echo "- GraphWrite:   http://localhost:${GRAPHWRITE_PORT}"
 
-echo "\nTip: In a new terminal, run ./scripts/dev_smoke.sh to smoke test endpoints."
+echo "\nTip: In a new terminal, run ./scripts/dev_smoke.sh or ./scripts/dev_matrix.sh (matrix runs both NOP and PUBSUB_ENABLED=true)"
 
 echo "\nPress Ctrl+C to stop..."
 

@@ -41,7 +41,7 @@ http_check() {
 # API health
 http_check "API health" GET "http://localhost:${API_PORT}/healthz"
 
-# Baton IssueDirective (expect 200)
+# Baton IssueDirective (expect 200) — echoes which publisher is selected via API logs
 http_check "Baton IssueDirective" POST "http://localhost:${API_PORT}/libretto.baton.v1.BatonService/IssueDirective" '{"text":"Introduce a betrayal","act":"2","target":"protagonist"}'
 
 # Plot Weaver stub (expect 200)
