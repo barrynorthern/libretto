@@ -1,6 +1,6 @@
 # Simple dev targets for local workflow
 
-.PHONY: build test dev-up dev-smoke dev-down
+.PHONY: build test dev-up dev-smoke dev-down matrix
 
 build:
 	bazel build //...
@@ -13,6 +13,10 @@ dev-up:
 
 dev-smoke:
 	./scripts/dev_smoke.sh
+
+
+matrix:
+	./scripts/dev_matrix.sh
 
 dev-down:
 	pkill -f bazel-bin/services/api/api_/api || true
