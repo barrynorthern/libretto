@@ -87,3 +87,12 @@ jobs:
           if [ -f dev_up.pid ]; then
             kill $(cat dev_up.pid) || true
           fi
+
+      - name: Upload dev logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-logs
+          path: dev_up.log
+          if-no-files-found: warn
+          retention-days: 7
