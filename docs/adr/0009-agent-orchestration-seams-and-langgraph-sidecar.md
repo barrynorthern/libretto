@@ -114,7 +114,7 @@ These choices map onto Temporal concepts (Workflow ID, Activities, Signals, Quer
 
 ## Implementation Outline (MVP)
 - Define v1 protobuf/JSON schemas for AgentClient and event stream (per ADR 0008)
-- Implement Go AgentClient and ToolServer (with strict JSON schema validation)
+- Implement Go AgentClient and ToolServer (proto-defined contracts; JSON Schema generated only if required by downstream tooling)
 - Implement Python LangGraph sidecar with:
   - Planner node, tool-executing node(s), checkpointing in Postgres
   - RPC adaptors to call Go tools and emit events

@@ -42,6 +42,8 @@ func main() {
 	switch pub.(type) {
 	case publisher.PubSubPublisher:
 		log.Printf("publisher=pubsub topic=%s", topic)
+	case publisher.DevPushPublisher:
+		log.Printf("publisher=devpush topic=%s", topic)
 	default:
 		log.Printf("publisher=nop topic=%s", topic)
 	}

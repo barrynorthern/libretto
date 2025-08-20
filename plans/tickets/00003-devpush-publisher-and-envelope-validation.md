@@ -9,22 +9,22 @@ Date completed: pending
 We can issue directives (API) and exercise GraphWrite, but the async “API → bus → Plot Weaver” path is not yet truly end‑to‑end. ADR 0009 emphasizes clear seams and keeping orchestration concerns separate. Rather than introduce a heavy Pub/Sub emulator now, we can add a dev‑only publisher that simulates the bus by HTTP POSTing to Plot Weaver, while validating the event envelope on both sides.
 
 ## Goal
-Introduce a development‑only DevPush publisher to simulate the bus locally and enforce JSON envelope validation pre‑publish (API) and post‑decode (Plot Weaver). Validate both NOP and DevPush modes via Make-based smoke/matrix.
+Introduce a development‑only DevPush publisher to simulate the bus locally and enforce protobuf-defined envelope validation pre‑publish (API) and post‑decode (Plot Weaver). Validate both NOP and DevPush modes via Make-based smoke/matrix.
 
 ## Scope
 - API
   - Publisher selection via env enum: `PUBLISHER` ∈ {`nop`, `devpush`, `pubsub`}. Backward compatibility: if `PUBSUB_ENABLED=true`, treat as `PUBLISHER=pubsub`.
-  - Implement `DevPushPublisher` that POSTs the JSON envelope to Plot Weaver’s push endpoint.
+  - Implement `DevPushPublisher` that POSTs a Pub/Sub-style push envelope to Plot Weaver’s push endpoint, carrying protojson-encoded payload.
     - Config: `PLOT_WEAVER_URL` (default `http://localhost:${PLOT_PORT:-8081}/push`).
-  - Validate the envelope against `schemas/events/envelope.schema.json` before publishing; return 400 on invalid payloads.
+  - Validate the envelope and payload using protobuf decoding before publishing; return 400 on invalid payloads.
   - Log selection: `publisher=devpush|nop|pubsub topic=...` for visibility.
 - Plot Weaver
-  - `/push` handler: after base64 decode, validate the envelope against the same schema; return 400 if invalid, 200 otherwise.
+  - `/push` handler: after base64 decode, validate by decoding the proto-defined envelope/payload; return 400 if invalid, 200 otherwise.
   - Keep existing stub handler for local flows.
 - Tooling / Make targets
   - Keep Make as the interface (scripts are implementation details).
   - Extend `make matrix` to include `PUBLISHER=devpush` case (in addition to default NOP).
-  - Unit tests: API and Plot Weaver validation (valid/invalid envelopes).
+  - Unit tests: API and Plot Weaver validation (valid/invalid envelopes) using protobuf decoding.
   - Optional env gate `ENVELOPE_VALIDATE=1` (default on) to allow bypass if needed during debugging.
 - CI
   - Extend smoke‑matrix job to add a DevPush case; retain log artifact.
@@ -39,7 +39,7 @@ Introduce a development‑only DevPush publisher to simulate the bus locally and
 
 ## Non‑functional requirements
 - Matrix step completes in < 60s on CI runners under typical load.
-- Validation errors include actionable messages (which field failed) in logs (not necessarily user‑facing).
+- Validation errors include actionable messages (which field failed) in logs (not necessarily user‑facing). Prefer protobuf decode errors and explicit field checks.
 
 ## Risks / mitigations
 - DevPush diverges from real Pub/Sub.

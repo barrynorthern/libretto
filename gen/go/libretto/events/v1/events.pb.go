@@ -250,6 +250,97 @@ func (x *SceneProposalReady) GetSummary() string {
 	return ""
 }
 
+// Wrapper that carries the envelope and a typed payload.
+type Event struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Envelope *Envelope              `protobuf:"bytes,1,opt,name=envelope,proto3" json:"envelope,omitempty"`
+	// Types that are valid to be assigned to Payload:
+	//
+	//	*Event_DirectiveIssued
+	//	*Event_SceneProposalReady
+	Payload       isEvent_Payload `protobuf_oneof:"payload"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Event) Reset() {
+	*x = Event{}
+	mi := &file_libretto_events_v1_events_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Event) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Event) ProtoMessage() {}
+
+func (x *Event) ProtoReflect() protoreflect.Message {
+	mi := &file_libretto_events_v1_events_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Event.ProtoReflect.Descriptor instead.
+func (*Event) Descriptor() ([]byte, []int) {
+	return file_libretto_events_v1_events_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *Event) GetEnvelope() *Envelope {
+	if x != nil {
+		return x.Envelope
+	}
+	return nil
+}
+
+func (x *Event) GetPayload() isEvent_Payload {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+func (x *Event) GetDirectiveIssued() *DirectiveIssued {
+	if x != nil {
+		if x, ok := x.Payload.(*Event_DirectiveIssued); ok {
+			return x.DirectiveIssued
+		}
+	}
+	return nil
+}
+
+func (x *Event) GetSceneProposalReady() *SceneProposalReady {
+	if x != nil {
+		if x, ok := x.Payload.(*Event_SceneProposalReady); ok {
+			return x.SceneProposalReady
+		}
+	}
+	return nil
+}
+
+type isEvent_Payload interface {
+	isEvent_Payload()
+}
+
+type Event_DirectiveIssued struct {
+	DirectiveIssued *DirectiveIssued `protobuf:"bytes,10,opt,name=directive_issued,json=directiveIssued,proto3,oneof"`
+}
+
+type Event_SceneProposalReady struct {
+	SceneProposalReady *SceneProposalReady `protobuf:"bytes,11,opt,name=scene_proposal_ready,json=sceneProposalReady,proto3,oneof"`
+}
+
+func (*Event_DirectiveIssued) isEvent_Payload() {}
+
+func (*Event_SceneProposalReady) isEvent_Payload() {}
+
 var File_libretto_events_v1_events_proto protoreflect.FileDescriptor
 
 const file_libretto_events_v1_events_proto_rawDesc = "" +
@@ -274,7 +365,13 @@ const file_libretto_events_v1_events_proto_rawDesc = "" +
 	"\x12SceneProposalReady\x12\x19\n" +
 	"\bscene_id\x18\x01 \x01(\tR\asceneId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
-	"\asummary\x18\x03 \x01(\tR\asummaryBFZDgithub.com/barrynorthern/libretto/gen/go/libretto/events/v1;eventsv1b\x06proto3"
+	"\asummary\x18\x03 \x01(\tR\asummary\"\xfa\x01\n" +
+	"\x05Event\x128\n" +
+	"\benvelope\x18\x01 \x01(\v2\x1c.libretto.events.v1.EnvelopeR\benvelope\x12P\n" +
+	"\x10directive_issued\x18\n" +
+	" \x01(\v2#.libretto.events.v1.DirectiveIssuedH\x00R\x0fdirectiveIssued\x12Z\n" +
+	"\x14scene_proposal_ready\x18\v \x01(\v2&.libretto.events.v1.SceneProposalReadyH\x00R\x12sceneProposalReadyB\t\n" +
+	"\apayloadBFZDgithub.com/barrynorthern/libretto/gen/go/libretto/events/v1;eventsv1b\x06proto3"
 
 var (
 	file_libretto_events_v1_events_proto_rawDescOnce sync.Once
@@ -288,20 +385,24 @@ func file_libretto_events_v1_events_proto_rawDescGZIP() []byte {
 	return file_libretto_events_v1_events_proto_rawDescData
 }
 
-var file_libretto_events_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_libretto_events_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_libretto_events_v1_events_proto_goTypes = []any{
 	(*Envelope)(nil),              // 0: libretto.events.v1.Envelope
 	(*DirectiveIssued)(nil),       // 1: libretto.events.v1.DirectiveIssued
 	(*SceneProposalReady)(nil),    // 2: libretto.events.v1.SceneProposalReady
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(*Event)(nil),                 // 3: libretto.events.v1.Event
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
 }
 var file_libretto_events_v1_events_proto_depIdxs = []int32{
-	3, // 0: libretto.events.v1.Envelope.occurred_at:type_name -> google.protobuf.Timestamp
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: libretto.events.v1.Envelope.occurred_at:type_name -> google.protobuf.Timestamp
+	0, // 1: libretto.events.v1.Event.envelope:type_name -> libretto.events.v1.Envelope
+	1, // 2: libretto.events.v1.Event.directive_issued:type_name -> libretto.events.v1.DirectiveIssued
+	2, // 3: libretto.events.v1.Event.scene_proposal_ready:type_name -> libretto.events.v1.SceneProposalReady
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_libretto_events_v1_events_proto_init() }
@@ -309,13 +410,17 @@ func file_libretto_events_v1_events_proto_init() {
 	if File_libretto_events_v1_events_proto != nil {
 		return
 	}
+	file_libretto_events_v1_events_proto_msgTypes[3].OneofWrappers = []any{
+		(*Event_DirectiveIssued)(nil),
+		(*Event_SceneProposalReady)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_libretto_events_v1_events_proto_rawDesc), len(file_libretto_events_v1_events_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

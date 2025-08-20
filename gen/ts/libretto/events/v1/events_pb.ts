@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file libretto/events/v1/events.proto.
  */
 export const file_libretto_events_v1_events: GenFile = /*@__PURE__*/
-  fileDesc("Ch9saWJyZXR0by9ldmVudHMvdjEvZXZlbnRzLnByb3RvEhJsaWJyZXR0by5ldmVudHMudjEi5AEKCEVudmVsb3BlEhIKCmV2ZW50X25hbWUYASABKAkSFQoNZXZlbnRfdmVyc2lvbhgCIAEoCRIQCghldmVudF9pZBgDIAEoCRIWCg5jb3JyZWxhdGlvbl9pZBgEIAEoCRIUCgxjYXVzYXRpb25faWQYBSABKAkSFwoPaWRlbXBvdGVuY3lfa2V5GAYgASgJEhAKCHByb2R1Y2VyGAcgASgJEhEKCXRlbmFudF9pZBgIIAEoCRIvCgtvY2N1cnJlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiPAoPRGlyZWN0aXZlSXNzdWVkEgwKBHRleHQYASABKAkSCwoDYWN0GAIgASgJEg4KBnRhcmdldBgDIAEoCSJGChJTY2VuZVByb3Bvc2FsUmVhZHkSEAoIc2NlbmVfaWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHc3VtbWFyeRgDIAEoCUJGWkRnaXRodWIuY29tL2JhcnJ5bm9ydGhlcm4vbGlicmV0dG8vZ2VuL2dvL2xpYnJldHRvL2V2ZW50cy92MTtldmVudHN2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("Ch9saWJyZXR0by9ldmVudHMvdjEvZXZlbnRzLnByb3RvEhJsaWJyZXR0by5ldmVudHMudjEi5AEKCEVudmVsb3BlEhIKCmV2ZW50X25hbWUYASABKAkSFQoNZXZlbnRfdmVyc2lvbhgCIAEoCRIQCghldmVudF9pZBgDIAEoCRIWCg5jb3JyZWxhdGlvbl9pZBgEIAEoCRIUCgxjYXVzYXRpb25faWQYBSABKAkSFwoPaWRlbXBvdGVuY3lfa2V5GAYgASgJEhAKCHByb2R1Y2VyGAcgASgJEhEKCXRlbmFudF9pZBgIIAEoCRIvCgtvY2N1cnJlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiPAoPRGlyZWN0aXZlSXNzdWVkEgwKBHRleHQYASABKAkSCwoDYWN0GAIgASgJEg4KBnRhcmdldBgDIAEoCSJGChJTY2VuZVByb3Bvc2FsUmVhZHkSEAoIc2NlbmVfaWQYASABKAkSDQoFdGl0bGUYAiABKAkSDwoHc3VtbWFyeRgDIAEoCSLLAQoFRXZlbnQSLgoIZW52ZWxvcGUYASABKAsyHC5saWJyZXR0by5ldmVudHMudjEuRW52ZWxvcGUSPwoQZGlyZWN0aXZlX2lzc3VlZBgKIAEoCzIjLmxpYnJldHRvLmV2ZW50cy52MS5EaXJlY3RpdmVJc3N1ZWRIABJGChRzY2VuZV9wcm9wb3NhbF9yZWFkeRgLIAEoCzImLmxpYnJldHRvLmV2ZW50cy52MS5TY2VuZVByb3Bvc2FsUmVhZHlIAEIJCgdwYXlsb2FkQkZaRGdpdGh1Yi5jb20vYmFycnlub3J0aGVybi9saWJyZXR0by9nZW4vZ28vbGlicmV0dG8vZXZlbnRzL3YxO2V2ZW50c3YxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message libretto.events.v1.Envelope
@@ -124,4 +124,40 @@ export type SceneProposalReady = Message<"libretto.events.v1.SceneProposalReady"
  */
 export const SceneProposalReadySchema: GenMessage<SceneProposalReady> = /*@__PURE__*/
   messageDesc(file_libretto_events_v1_events, 2);
+
+/**
+ * Wrapper that carries the envelope and a typed payload.
+ *
+ * @generated from message libretto.events.v1.Event
+ */
+export type Event = Message<"libretto.events.v1.Event"> & {
+  /**
+   * @generated from field: libretto.events.v1.Envelope envelope = 1;
+   */
+  envelope?: Envelope;
+
+  /**
+   * @generated from oneof libretto.events.v1.Event.payload
+   */
+  payload: {
+    /**
+     * @generated from field: libretto.events.v1.DirectiveIssued directive_issued = 10;
+     */
+    value: DirectiveIssued;
+    case: "directiveIssued";
+  } | {
+    /**
+     * @generated from field: libretto.events.v1.SceneProposalReady scene_proposal_ready = 11;
+     */
+    value: SceneProposalReady;
+    case: "sceneProposalReady";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message libretto.events.v1.Event.
+ * Use `create(EventSchema)` to create a new message.
+ */
+export const EventSchema: GenMessage<Event> = /*@__PURE__*/
+  messageDesc(file_libretto_events_v1_events, 3);
 

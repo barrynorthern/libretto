@@ -1,12 +1,12 @@
 # ADR 0005: Event Schema and Idempotency Conventions
 
-Status: Accepted
+Status: Superseded by ADR 0010
 Date: 2025-08-11
 
 ## Context
 Agents communicate via Pub/Sub with at-least-once delivery and potential reordering. We need consistent event envelopes, correlation, and idempotency to avoid duplicate side effects.
 
-## Decision
+## Decision (Superseded)
 - Use a versioned JSON Schema envelope: eventName, eventVersion, eventId, occurredAt, correlationId, causationId, idempotencyKey, producer, tenantId, payload.
 - All side-effecting operations must be idempotent keyed by idempotencyKey; consumers return prior results on duplicates.
 - Use correlationId/causationId to link traces across UI→API→Event→Agent→GraphWrite.
