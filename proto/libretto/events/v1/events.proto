@@ -29,3 +29,13 @@ message SceneProposalReady {
   string summary = 3;
 }
 
+
+
+// Wrapper that carries the envelope and a typed payload.
+message Event {
+  Envelope envelope = 1;
+  oneof payload {
+    DirectiveIssued directive_issued = 10;
+    SceneProposalReady scene_proposal_ready = 11;
+  }
+}

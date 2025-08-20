@@ -7,9 +7,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
+	eventsv1 "github.com/barrynorthern/libretto/gen/go/libretto/events/v1"
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type pushEnvelope struct {
@@ -42,6 +45,24 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "invalid base64 data", http.StatusBadRequest)
 		return
+	}
+	// Optional proto-based validation: decode full Event (envelope + payload)
+	var ev eventsv1.Event
+	if os.Getenv("ENVELOPE_VALIDATE") != "0" {
+		if err := (protojson.UnmarshalOptions{DiscardUnknown: true}).Unmarshal(dec, &ev); err != nil {
+			log.Printf("plotweaver: event decode error: %v", err)
+			http.Error(w, "invalid event", http.StatusBadRequest)
+			return
+		}
+	}
+	// Switch on payload type (no-op handling for now)
+	switch ev.Payload.(type) {
+	case *eventsv1.Event_DirectiveIssued:
+		// TODO: kick off plot weaving using directive
+	case *eventsv1.Event_SceneProposalReady:
+		// TODO: accept/forward scene proposal
+	default:
+		// Unknown or absent: keep stub behavior
 	}
 	log.Printf("plotweaver: received push messageId=%s attrs=%v payload=%s", env.Message.MessageID, env.Message.Attributes, string(dec))
 	w.WriteHeader(http.StatusOK)

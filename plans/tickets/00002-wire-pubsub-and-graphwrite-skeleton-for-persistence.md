@@ -1,9 +1,9 @@
 # 002 – Wire Pub/Sub and GraphWrite skeleton for persistence (next)
 
-Status: Proposed
+Status: Done (merged)
 Owner: barrynorthern
-Start: TBC
-Date completed: pending
+Start: 2025-08-16
+Date completed: 2025-08-17
 
 ## Goal
 Turn the stubbed event path into a real pipeline by introducing Pub/Sub publisher for API, Pub/Sub push handler for Plot Weaver, and a GraphWrite service skeleton that persists versions/deltas in-memory (or to Firestore if ready).
@@ -18,7 +18,9 @@ Turn the stubbed event path into a real pipeline by introducing Pub/Sub publishe
 - API publishes to configured Pub/Sub topic when enabled; falls back to NOP locally
 - Plot Weaver accepts Pub/Sub push JSON and emits SceneProposalReady via publisher
 - GraphWrite Apply returns new version id and applied count for simple create deltas
-- bazel test //... passes; curl smoke checks remain valid
+- Developer UX: Make-first workflow (dev-up, dev-smoke, matrix); CI smoke-matrix running NOP and PUBSUB paths
+
+- All tests green (bazel build/test), smoke checks valid via Make targets
 
 ## Risks / mitigations
 - Firestore readiness: start with in-memory, add Firestore in a follow-up

@@ -5,8 +5,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "events",
-    srcs = ["envelope.go"],
+    srcs = ["envelope.go", "validate.go"],
     importpath = "github.com/barrynorthern/libretto/packages/contracts/events",
+    deps = [
+        "//gen/go/libretto/events/v1:events_v1",
+        "@com_github_google_uuid//:go_default_library",
+    ],
     visibility = ["//visibility:public"],
 )
 

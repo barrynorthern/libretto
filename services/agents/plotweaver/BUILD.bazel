@@ -1,11 +1,13 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 go_library(
     name = "plotweaver_lib",
     srcs = ["main.go", "handler.go"],
     importpath = "github.com/barrynorthern/libretto/services/agents/plotweaver",
     deps = [
+        "//gen/go/libretto/events/v1:events_v1",
         "@com_github_google_uuid//:go_default_library",
+        "@org_golang_google_protobuf//encoding/protojson:go_default_library",
     ],
     visibility = ["//visibility:private"],
 )
@@ -14,5 +16,17 @@ go_binary(
     name = "plotweaver",
     embed = [":plotweaver_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "plotweaver_test",
+    srcs = ["handler_test.go"],
+    embed = [":plotweaver_lib"],
+    deps = [
+        "//gen/go/libretto/events/v1:events_v1",
+        "@org_golang_google_protobuf//encoding/protojson:go_default_library",
+        "@org_golang_google_protobuf//types/known/timestamppb:go_default_library",
+    ],
+    size = "small",
 )
 

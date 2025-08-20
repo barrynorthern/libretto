@@ -7,9 +7,13 @@ go_library(
     srcs = [
         "publisher/publisher.go",
         "publisher/pubsub.go",
+        "publisher/devpush.go",
         "publisher/selector.go",
     ],
     importpath = "github.com/barrynorthern/libretto/services/api/publisher",
+    deps = [
+        "@com_github_google_uuid//:go_default_library",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -23,8 +27,11 @@ go_library(
         "//gen/go/libretto/baton/v1:baton_v1",
         "//gen/go/libretto/baton/v1/batonv1connect:baton_v1_connect",
         "//gen/go/libretto/events/v1:events_v1",
+        "//packages/contracts/events:events",
         "@com_connectrpc_connect//:go_default_library",
         "@com_github_google_uuid//:go_default_library",
+        "@org_golang_google_protobuf//encoding/protojson:go_default_library",
+        "@org_golang_google_protobuf//types/known/timestamppb:go_default_library",
     ],
     visibility = ["//visibility:public"],
 )

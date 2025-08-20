@@ -80,6 +80,8 @@ jobs:
         run: ./scripts/dev_smoke.sh
       - name: Smoke (PUBSUB)
         run: PUBSUB_ENABLED=true ./scripts/dev_smoke.sh
+      - name: Smoke (DEVPUSH)
+        run: PUBLISHER=devpush ./scripts/dev_smoke.sh
       - name: Cleanup
         if: always()
         run: |
