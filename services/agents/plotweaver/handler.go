@@ -11,8 +11,10 @@ import (
 	"time"
 
 	eventsv1 "github.com/barrynorthern/libretto/gen/go/libretto/events/v1"
+	contracts_events "github.com/barrynorthern/libretto/packages/contracts/events"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type pushEnvelope struct {
@@ -55,12 +57,45 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// Switch on payload type (no-op handling for now)
-	switch ev.Payload.(type) {
+	// Switch on payload type; on DirectiveIssued, emit a basic SceneProposalReady
+	switch p := ev.Payload.(type) {
 	case *eventsv1.Event_DirectiveIssued:
-		// TODO: kick off plot weaving using directive
+		corr := ev.GetEnvelope().GetCorrelationId()
+		out := &eventsv1.Event{
+			Envelope: &eventsv1.Envelope{
+				EventName:      "SceneProposalReady",
+				EventVersion:   "1.0.0",
+				EventId:        uuid.NewString(),
+				OccurredAt:     timestamppb.Now(),
+				CorrelationId:  corr,
+				CausationId:    ev.GetEnvelope().GetEventId(),
+				IdempotencyKey: uuid.NewString(),
+				Producer:       "plotweaver",
+				TenantId:       "dev",
+			},
+			Payload: &eventsv1.Event_SceneProposalReady{
+				SceneProposalReady: &eventsv1.SceneProposalReady{
+					SceneId: uuid.NewString(),
+					Title:   "A turning point",
+					Summary: "A betrayal changes the course of events.",
+				},
+			},
+		}
+		if os.Getenv("ENVELOPE_VALIDATE") != "0" {
+			if err := contracts_events.ValidateEnvelope(out.GetEnvelope()); err != nil {
+				log.Printf("plotweaver: invalid outbound envelope: %v", err)
+				http.Error(w, "invalid outbound envelope", http.StatusBadRequest)
+				return
+			}
+		}
+		// Marshal and publish via selected publisher
+		payload, _ := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(out)
+		_ = publishSceneProposal(r.Context(), "libretto.dev.scene.proposal.ready.v1", func(ctx context.Context, topic string, data []byte) error {
+			return plotPublisher.Publish(ctx, topic, payload)
+		})
+		log.Printf("plotweaver: consumed=DirectiveIssued published=SceneProposalReady correlationId=%s", corr)
 	case *eventsv1.Event_SceneProposalReady:
-		// TODO: accept/forward scene proposal
+		_ = p // no-op
 	default:
 		// Unknown or absent: keep stub behavior
 	}
