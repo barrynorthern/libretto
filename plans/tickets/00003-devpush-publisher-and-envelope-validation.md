@@ -1,9 +1,9 @@
 # 00003 – DevPush publisher and envelope validation (next)
 
-Status: Proposed
+Status: Completed
 Owner: barrynorthern
-Start: TBC
-Date completed: pending
+Start: 2025-08-17
+Date completed: 2025-08-17
 
 ## Context
 We can issue directives (API) and exercise GraphWrite, but the async “API → bus → Plot Weaver” path is not yet truly end‑to‑end. ADR 0009 emphasizes clear seams and keeping orchestration concerns separate. Rather than introduce a heavy Pub/Sub emulator now, we can add a dev‑only publisher that simulates the bus by HTTP POSTing to Plot Weaver, while validating the event envelope on both sides.
