@@ -1,6 +1,6 @@
 # 00008 – Canvas/Inspector minimal read from Firestore (vertical slice UI)
 
-Status: Proposed
+Status: Won't Do
 Owner: barrynorthern
 Start: TBC
 Date completed: pending

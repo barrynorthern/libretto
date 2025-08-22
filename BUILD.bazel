@@ -1,5 +1,46 @@
-# Gazelle target to update BUILD files
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 load("@bazel_gazelle//:def.bzl", "gazelle")
 
+# Gazelle target to update BUILD files
 gazelle(name = "gazelle")
 
+# Internal libraries
+
+go_library(
+    name = "app_lib",
+    srcs = [
+        "internal/app/orchestrator.go",
+        "internal/app/http.go",
+    ],
+    importpath = "github.com/barrynorthern/libretto/internal/app",
+    deps = [
+        "//gen/go/libretto/baton/v1:baton_v1",
+        "//gen/go/libretto/baton/v1/batonv1connect:baton_v1_connect",
+        "//internal/agents/narrative:narrative_lib",
+        "//internal/agents/plotweaver:plotweaver_lib",
+        "//internal/graphwrite:graphwrite_lib",
+        "@com_connectrpc_connect//:go_default_library",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Agents
+
+# Main binary
+
+go_library(
+    name = "libretto_main_lib",
+    srcs = ["cmd/libretto/main.go"],
+    importpath = "github.com/barrynorthern/libretto/cmd/libretto",
+    deps = [
+        ":app_lib",
+        "//gen/go/libretto/baton/v1/batonv1connect:baton_v1_connect",
+        "//internal/graphwrite:graphwrite_lib",
+    ],
+)
+
+go_binary(
+    name = "libretto",
+    embed = [":libretto_main_lib"],
+    visibility = ["//visibility:public"],
+)
