@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Starts the local stack (API, Plot Weaver, GraphWrite) with Bazel on dev ports.
+# Starts the local stack (API, Plot Weaver, Narrative Ingest, GraphWrite) with Bazel on dev ports.
 # Stop with Ctrl+C; all child processes are cleaned up.
 
 API_PORT="${API_PORT:-8080}"
 PLOT_PORT="${PLOT_PORT:-8081}"
+NARRATIVE_PORT="${NARRATIVE_PORT:-8083}"
 GRAPHWRITE_PORT="${GRAPHWRITE_PORT:-8082}"
 
 port_in_use() {
@@ -31,7 +32,7 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # Preflight: ensure ports are free
-for name in API:${API_PORT} PLOT:${PLOT_PORT} GRAPHWRITE:${GRAPHWRITE_PORT}; do
+for name in API:${API_PORT} PLOT:${PLOT_PORT} NARRATIVE:${NARRATIVE_PORT} GRAPHWRITE:${GRAPHWRITE_PORT}; do
   svc="${name%%:*}"; port="${name##*:}"
   if port_in_use "${port}"; then
     echo "Error: Port ${port} for ${svc} appears to be in use. Set ${svc}_PORT to a free port or stop the other process." >&2
@@ -51,6 +52,12 @@ pids+=("$!")
 
 sleep 0.5
 
+echo "Starting Narrative Ingest on :${NARRATIVE_PORT}"
+PORT="${NARRATIVE_PORT}" bazel run //services/agents/narrativeingest:narrativeingest &
+pids+=("$!")
+
+sleep 0.5
+
 echo "Starting GraphWrite on :${GRAPHWRITE_PORT}"
 PORT="${GRAPHWRITE_PORT}" bazel run //services/graphwrite:graphwrite &
 pids+=("$!")
@@ -59,9 +66,10 @@ pids+=("$!")
 sleep 2
 
 echo "\nServices started:"
-echo "- API:          http://localhost:${API_PORT}"
-echo "- Plot Weaver:  http://localhost:${PLOT_PORT}"
-echo "- GraphWrite:   http://localhost:${GRAPHWRITE_PORT}"
+echo "- API:              http://localhost:${API_PORT}"
+echo "- Plot Weaver:      http://localhost:${PLOT_PORT}"
+echo "- Narrative Ingest: http://localhost:${NARRATIVE_PORT}"
+echo "- GraphWrite:       http://localhost:${GRAPHWRITE_PORT}"
 
 echo "\nTip: In a new terminal, run ./scripts/dev_smoke.sh or ./scripts/dev_matrix.sh (matrix runs NOP, PUBSUB back-compat, and DevPush)"
 
