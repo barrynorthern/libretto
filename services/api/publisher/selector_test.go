@@ -2,7 +2,6 @@ package publisher
 
 import (
 	"context"
-	"os"
 	"testing"
 )
 
@@ -38,4 +37,3 @@ func TestSmoke(t *testing.T) {
 		t.Fatalf("expected publish to be called")
 	}
 }
-
