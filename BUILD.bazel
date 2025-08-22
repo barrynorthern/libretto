@@ -45,18 +45,6 @@ go_library(
     visibility = ["//visibility:public"],
 )
 
-# Graphwrite
-
-go_library(
-    name = "graphwrite_lib",
-    srcs = [
-        "internal/graphwrite/store.go",
-        "internal/graphwrite/read.go",
-    ],
-    importpath = "github.com/barrynorthern/libretto/internal/graphwrite",
-    visibility = ["//visibility:public"],
-)
-
 # Main binary
 
 go_library(
