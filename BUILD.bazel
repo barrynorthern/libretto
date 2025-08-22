@@ -10,6 +10,7 @@ go_library(
     name = "app_lib",
     srcs = [
         "internal/app/orchestrator.go",
+        "internal/app/http.go",
     ],
     importpath = "github.com/barrynorthern/libretto/internal/app",
     deps = [
@@ -62,6 +63,7 @@ go_library(
     deps = [
         ":app_lib",
         "//gen/go/libretto/baton/v1/batonv1connect:baton_v1_connect",
+        "//internal/graphwrite:graphwrite_lib",
     ],
 )
 

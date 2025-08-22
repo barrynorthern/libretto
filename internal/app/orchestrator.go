@@ -8,22 +8,22 @@ import (
 	"github.com/barrynorthern/libretto/gen/go/libretto/baton/v1/batonv1connect"
 	"github.com/barrynorthern/libretto/internal/agents/narrative"
 	"github.com/barrynorthern/libretto/internal/agents/plotweaver"
-	"github.com/barrynorthern/libretto/internal/graphwrite"
+	gwpkg "github.com/barrynorthern/libretto/internal/graphwrite"
 )
 
 // Orchestrator implements BatonService and synchronously calls agent modules.
-type Orchestrator struct{
-	plot plotweaver.Module
-	narr narrative.Module
-	gw   graphwrite.Store
+type Orchestrator struct {
+	plot     plotweaver.Module
+	narr     narrative.Module
+	gw       gwpkg.Store
 	producer string
 }
 
 func NewOrchestrator() *Orchestrator {
 	return &Orchestrator{
-		plot: plotweaver.New(),
-		narr: narrative.New(),
-		gw:   graphwrite.NewInMemory(),
+		plot:     plotweaver.New(),
+		narr:     narrative.New(),
+		gw:       gwpkg.NewInMemory(),
 		producer: "monolith",
 	}
 }
@@ -37,4 +37,3 @@ func (o *Orchestrator) IssueDirective(ctx context.Context, req *connect.Request[
 	_ = o.narr.ApplySceneProposal(ctx, o.gw, proposal)
 	return connect.NewResponse(&batonv1.IssueDirectiveResponse{CorrelationId: proposal.CorrelationId}), nil
 }
-
