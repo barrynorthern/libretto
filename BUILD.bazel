@@ -49,7 +49,10 @@ go_library(
 
 go_library(
     name = "graphwrite_lib",
-    srcs = ["//internal/graphwrite:store.go"],
+    srcs = [
+        "internal/graphwrite/store.go",
+        "internal/graphwrite/read.go",
+    ],
     importpath = "github.com/barrynorthern/libretto/internal/graphwrite",
     visibility = ["//visibility:public"],
 )

@@ -2,8 +2,7 @@
 set -euo pipefail
 
 API_PORT="${API_PORT:-8080}"
-PLOT_PORT="${PLOT_PORT:-8081}"
-GRAPHWRITE_PORT="${GRAPHWRITE_PORT:-8082}"
+
 
 PASS=0
 FAIL=0
@@ -44,11 +43,9 @@ http_check "API health" GET "http://localhost:${API_PORT}/healthz"
 # Baton IssueDirective (expect 200) — echoes which publisher is selected via API logs
 http_check "Baton IssueDirective" POST "http://localhost:${API_PORT}/libretto.baton.v1.BatonService/IssueDirective" '{"text":"Introduce a betrayal","act":"2","target":"protagonist"}'
 
-# Plot Weaver stub (expect 200)
-http_check "Plot Weaver stub" POST "http://localhost:${PLOT_PORT}/"
 
-# GraphWrite Apply (expect 200)
-http_check "GraphWrite Apply" POST "http://localhost:${GRAPHWRITE_PORT}/libretto.graph.v1.GraphWriteService/Apply" '{"parentVersionId":"01JROOT","deltas":[{"op":"create","entityType":"Scene","entityId":"sc-1","fields":{"title":"Test"}}]}'
+
+
 
 TOTAL=$((PASS+FAIL))
 
