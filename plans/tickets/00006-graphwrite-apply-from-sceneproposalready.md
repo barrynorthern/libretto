@@ -1,6 +1,6 @@
 # 00006 – Consume SceneProposalReady → GraphWrite.Apply (persistence step 1)
 
-Status: Proposed
+Status: Won't Do
 Owner: barrynorthern
 Start: TBC
 Date completed: pending

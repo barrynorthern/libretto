@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graphwrite_lib",
+    srcs = ["store.go"],
+    importpath = "github.com/barrynorthern/libretto/internal/graphwrite",
+    visibility = ["//visibility:public"],
+)
+

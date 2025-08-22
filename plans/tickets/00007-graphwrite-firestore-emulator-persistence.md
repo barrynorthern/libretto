@@ -1,6 +1,6 @@
 # 00007 – GraphWrite persistence via Firestore emulator (persistence step 2)
 
-Status: Proposed
+Status: Won't Do
 Owner: barrynorthern
 Start: TBC
 Date completed: pending

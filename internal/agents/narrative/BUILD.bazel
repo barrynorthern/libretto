@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "narrative_lib",
+    srcs = ["narrative.go"],
+    importpath = "github.com/barrynorthern/libretto/internal/agents/narrative",
+    deps = [
+        "//internal/agents/plotweaver:plotweaver_lib",
+        "//internal/graphwrite:graphwrite_lib",
+    ],
+    visibility = ["//visibility:public"],
+)
+
