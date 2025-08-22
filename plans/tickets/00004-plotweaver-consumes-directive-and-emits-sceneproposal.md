@@ -1,9 +1,9 @@
 # 00004 – Plot Weaver consumes DirectiveIssued and emits SceneProposalReady (oneof Event)
 
-Status: Proposed
+Status: Completed
 Owner: barrynorthern
-Start: TBC
-Date completed: pending
+Start: 2025-08-19
+Date completed: 2025-08-20
 
 ## Context
 We now publish typed Events (Envelope + oneof payload) and validate envelopes. Plot Weaver’s /push validates and logs incoming Events but does not yet act on DirectiveIssued nor publish a SceneProposalReady. Completing this agent loop will prove the end‑to‑end async path using DevPush locally.
@@ -47,6 +47,15 @@ Implement a minimal Plot Weaver consumer that decodes DirectiveIssued Events and
 - Real Pub/Sub client/emulator
 - Thematic Steward behavior
 - Persistence downstream of SceneProposalReady
+
+## Outcomes / Notes
+- Plot Weaver `/push` now base64-decodes, protojson-unmarshals libretto.events.v1.Event, and switches on oneof payload.
+- On DirectiveIssued, it emits a typed SceneProposalReady with a fresh Envelope, propagating correlationId and setting causationId to the incoming eventId.
+- Envelope validation is enforced when ENVELOPE_VALIDATE != "0" for both inbound decode and outbound publish using packages/contracts/events.
+- Publisher selection added (nop|devpush|pubsub) via PUBLISHER env; current implementations log distinctly per mode.
+- Unit tests cover invalid/valid push payloads; Plot Weaver package tests pass locally.
+- Dev smoke verifies logs: consumed DirectiveIssued and published SceneProposalReady with correlationId continuity.
+- Follow-up: align DevPush semantics across services (API vs agents) and expand CI matrix to include pubsub placeholder once available.
 
 ## References
 - ADR 0009: docs/adr/0009-agent-orchestration-seams-and-langgraph-sidecar.md
