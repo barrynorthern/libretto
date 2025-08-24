@@ -63,7 +63,7 @@ The system rejects a rigid, top-down hierarchy in favor of a dynamic, event-driv
 | **FR-3.2.4** | Event-Driven | When an agent consumes an event, it **shall** execute its core logic and, upon completion, **shall** publish its output as a new event (e.g., "SceneProposalReady") back to the Narrative Event Bus. |
 | **FR-3.2.5** | Complex | Where direct, targeted communication is required, when an agent needs a specific piece of information from another, it **shall** be able to use the A2A protocol for a point-to-point request, complementing the primary event-driven workflow. [6, 7] |
 
-### 4.0 The Concert Hall: Architecture & Implementation (GCP)
+### 4.0 Architecture & Implementation (Local‑First Desktop)
 
 This experience is built on a modern, real-time, serverless architecture designed for massive scalability and creative flexibility. The architecture adopts a hybrid database approach to use the best tool for each job.
 
@@ -71,26 +71,21 @@ This experience is built on a modern, real-time, serverless architecture designe
 
 | Component | Technology/Service | Rationale |
 | :--- | :--- | :--- |
-| **Conductor's Console** | Next.js (React) with TypeScript | A high-performance web framework for building the rich, interactive, and visual Orchestration Canvas. |
-| **Real-time State Sync** | **Firestore** & **WebSockets on Cloud Run** | Firestore serves as the real-time database for the "Living Narrative" graph, allowing agents and the Console to stay in sync. WebSockets provide the low-latency communication channel for pushing updates from the agents to the UI. |
-| **Structured Data Store** | **Cloud SQL for PostgreSQL** + **sqlc (Go)** | Cloud SQL provides a robust, ACID-compliant relational database for user accounts, project settings, and billing. `sqlc` generates type-safe Go clients from raw SQL to ensure data integrity and a superior developer experience. |
-| **Narrative Event Bus** | **Cloud Pub/Sub** | A fully managed, scalable messaging service that forms the backbone of the event-driven architecture. It decouples all agents, allowing them to operate asynchronously and resiliently. |
-| **AI Orchestra Platform** | **Vertex AI Agent Builder** | The central platform for building, deploying, and managing the individual agents. The **Agent Development Kit (ADK)** will be used to define agent logic and tools. |
-| **Agent Logic Execution** | **Cloud Run (Go)** | Each specialist agent's core logic is deployed as a separate, serverless Go service on Cloud Run with Pub/Sub push subscriptions. This provides isolation, scalability, and consistent tooling across backend services. |
-| **Narrative Knowledge (RAG)** | **Vertex AI Vector Search** | The 'World Architect' and 'Continuity Steward' agents are powered by RAG. The Living Narrative data from Firestore is continuously embedded and indexed in Vector Search, allowing these agents to perform deep, semantic searches across the entire story world. |
+| **Desktop UI** | Wails (React + TypeScript) | Local-first desktop app with a fast feedback loop and direct bindings into Go. |
+| **State Persistence** | SQLite + sqlc (Go) | Zero-config local DB; type-safe queries via sqlc; portable single-file storage. |
+| **Agent Orchestration** | In-process orchestrator (publish-subscribe semantics) | Decoupled modules with event semantics inside one process; extractable later if needed. |
+| **Context & RAG** | sqlite-vec (local vector DB) | Project-scoped embeddings and similarity search without new infra. |
+| **Embeddings/Models** | Ollama (default) + optional API-key providers | Offline/private by default; opt-in to hosted models for convenience. |
+| **Build** | Monorepo with Bazel (Go) + pnpm (UI) + buf (codegen) | Reproducible builds and shared contracts; TS/Go clients from protos. |
 
-#### 4.2 Architectural Flow: A Conductor's Directive
+#### 4.2 Architectural Flow: A Conductor's Directive (Local‑First)
 
 1.  **Directive Issued:** The Conductor issues a command via the Baton: *"Introduce a betrayal that complicates the protagonist's main goal."*
-2.  **Event Published:** The backend API publishes a `DirectiveIssued` event to a specific topic on the **Cloud Pub/Sub** bus. The event payload contains the directive text and relevant context (e.g., current act, protagonist ID).
-3.  **Agents Activate:**
-    *   The **Plot Weaver** agent, subscribed to this topic, consumes the event and begins generating structural options for the betrayal.
-    *   The **Thematic Steward**, also subscribed, consumes the event to ensure any proposal aligns with the core theme.
-4.  **Collaborative Generation:** The Plot Weaver determines it needs character-specific reactions. It publishes a new event: `CharacterReactionRequested` with the context of the betrayal.
-5.  **Character Troupe Responds:** The protagonist's and mentor's dedicated **Character Troupe** agents, subscribed to this event type, activate. They independently generate authentic dialogue and actions based on their personalities and publish them back to the bus as `CharacterReactionProvided` events.
-6.  **Synthesis and Proposal:** The Plot Weaver consumes the character reactions, integrates them into a coherent scene, and publishes a final `SceneProposalReady` event.
-7.  **Live Update:** A dedicated service subscribed to `SceneProposalReady` events updates the **Firestore** database with the new scene node. The real-time listener on the Conductor's Console immediately picks up this change, and the new scene appears on the Narrative Canvas for the Conductor's review.
-8.  **Review and Refinement:** The Conductor reviews the scene. The **Empath** agent has already consumed the `SceneProposalReady` event and attached its emotional analysis to the scene's metadata, which is now visible in the Inspector. The Conductor uses the "Tuners" to heighten the sense of shock, which sends a `RefinementDirective` event back to the bus, triggering the relevant agents to perform a revision.
+2.  **Context Built:** The Orchestrator asks the Context Manager to assemble a ContextBundle (relevant scenes, characters, beats) via sqlite‑vec and domain rules.
+3.  **Plot Proposal:** The Orchestrator calls PlotWeaver with the directive + ContextBundle. PlotWeaver uses the selected model (Ollama by default) to produce a SceneProposal.
+4.  **Apply:** The Orchestrator invokes the Narrative module to persist the scene via repositories (SQLite/sqlc).
+5.  **UI Update:** The UI reads from the local store and displays the new scene for review in the Inspector.
+6.  **Refine:** Tuners issue a refinement directive; the same path repeats with an updated ContextBundle.
 
 #### 4.3 Durable Execution and State Management
 The loss of creative work or state is a catastrophic failure. The system is architected to prevent this at all costs.
@@ -98,24 +93,18 @@ The loss of creative work or state is a catastrophic failure. The system is arch
 | ID | Type | Requirement |
 | :--- | :--- | :--- |
 | **FR-4.3.1** | Ubiquitous | The system **shall** ensure durable execution for all long-running, multi-step agent workflows. [8, 9] |
-| **FR-4.3.2** | Event-Driven | When a complex directive is issued that requires a sequence of steps, the system **shall** use **Google Cloud Workflows** to orchestrate the chain of agent invocations, ensuring that the overall process state is persisted at every step. [8] |
+| **FR-4.3.2** | Event-Driven | When a complex directive is issued that requires a sequence of steps, the system **shall** orchestrate the chain with a durable mechanism (in‑process for MVP; pluggable durable engine later), ensuring that the overall process state is persisted at every step. |
 | **FR-4.3.3** | Ubiquitous | The system **shall** use Firestore's transactional capabilities to ensure that all changes to the Living Narrative graph and the Conductor's view state are saved atomically and durably. [10] |
 | **FR-4.3.4** | Ubiquitous | The system **shall** implement a robust checkpointing mechanism for agent workflows, allowing a process to be resumed from the last successful step in the event of a transient failure in a downstream service or agent. [9, 11] |
 
 
 #### 4.4 Build & Repo Strategy (Monorepo)
 
-#### 4.4.1 Service Port Configuration (Local & Cloud Run)
-- All HTTP services (API and agents) shall accept the port via the standard `PORT` environment variable.
-- Default local ports to avoid collisions:
-  - API: 8080
-  - Plot Weaver: 8081
-- Runtimes: Cloud Run sets `PORT` automatically; local dev must set `PORT` explicitly when running multiple services.
-- Future agents should follow this pattern and reserve successive ports as needed; document assignments in README.
-
-- Backend services and agents: Go 1.22+ built with Bazel (rules_go, gazelle). Deployed to Cloud Run with Pub/Sub push.
-- Frontend: Next.js (TypeScript) built initially with package scripts; may be brought under Bazel (rules_nodejs) later.
-- Monorepo: Shared contracts and schemas live in a central package and are code-generated for Go (and TS for the FE) as needed.
+#### 4.4.1 Local build and tooling
+- Single Go binary (monolith) built with Bazel (rules_go, gazelle).
+- Desktop UI via Wails (React + TypeScript) using pnpm; Bazel wrappers optional later.
+- Codegen: buf for protobufs; generate Go and TS clients used by app and UI.
+- Monorepo: Shared contracts and schemas versioned in-repo for Go and TS.
 
 ### 5.0 v1.1 Addendum: Canonical Specifications for Implementation
 
@@ -129,9 +118,9 @@ This section is authoritative for implementation and augments Sections 1–4 wit
 - Inspector/Governor/Canvas: UI surfaces for context, orchestration visibility, and graph interaction.
 
 #### 5.2 Scope and Assumptions
-- In scope (MVP): Single-project orchestration; real-time UI sync; event-driven agents; versioning/snapshots; undo/redo; basic branching; RBAC; cost budgets; audit logs; export.
-- Out of scope (MVP): Rich free-form text editing; third-party agent marketplace; offline mode.
-- Assumptions: GCP; Firestore as canonical store; Pub/Sub at-least-once delivery; Google Cloud Workflows for orchestration (Temporal-ready design).
+- In scope (MVP): Single-project orchestration; offline-first desktop; versioning/snapshots; undo/redo; basic branching; cost budgets; export.
+- Out of scope (MVP): Rich free-form text editing; third-party agent marketplace; multi-user collaboration.
+- Assumptions: Local-first monolith; SQLite as canonical store; sqlite‑vec for RAG; Ollama for embeddings/models by default; optional API providers via user keys.
 
 #### 5.3 Prose Policy and Export/Import
 - Prose is a generated view of the Living Narrative, not a primary editing surface. Refinement occurs via structured Tuners or graph edits that trigger regeneration.
@@ -143,7 +132,7 @@ This section is authoritative for implementation and augments Sections 1–4 wit
 - Entities (ULID ids): Project, GraphVersion, Scene, Beat, Arc, Character, Location, Item, Theme, Relationship (edge), Annotation, Analysis.
 - Versioning: Each write produces a new GraphVersion with parentVersionId; snapshots are immutable; a working set pointer indicates the latest for editing.
 - Edges: Directed and typed (e.g., contains, advances, features, occursAt). Integrity and acyclicity enforced where applicable.
-- Graph Service: All mutations pass through a GraphWrite API that validates schema, referential integrity, and produces versioned deltas. Firestore stores nodes, edges, and denormalized adjacency indexes (incoming/outgoing) to enable O(1) fetch of neighbors and sequence lookups.
+- Graph Service: All mutations pass through an application service (GraphWrite) that validates schema, referential integrity, and produces versioned deltas. SQLite stores nodes, edges, and supporting indexes to enable efficient neighbor and sequence queries.
 
 #### 5.5 Event Schema Registry
 - Envelope (JSON Schema v2020-12): eventName, eventVersion (semver), eventId (ULID), occurredAt, correlationId, causationId, idempotencyKey, producer, tenantId, payload.
@@ -158,7 +147,7 @@ This section is authoritative for implementation and augments Sections 1–4 wit
 - Security: Service accounts with least privilege; all writes through GraphWrite API.
 
 #### 5.7 UI Semantics and Real-time
-- Real-time source of truth: Firestore listeners for persistent state; WebSockets used only for transient streaming previews. On completion, canonical results are committed to Firestore.
+- UI state: Local SQLite is the source of truth; streaming used only for transient previews. On completion, canonical results are committed to SQLite and reflected in the UI.
 - Canvas: Structural edits show preview; on confirm, emit NarrativeRestructured with a structured diff.
 - Inspector: Shows prose (read-only), linked entities, analyses, and allows highlight-based annotations that become structured feedback tied to nodes/edges.
 - Governor: Displays in-flight events by correlationId and per-agent state (queued/running/succeeded/failed) with recent logsRef.
