@@ -30,23 +30,40 @@ flowchart TB
   Narr --> Store
 ```
 
-## Domain Model (initial)
+## Domain Model and Seams (high level)
 ```mermaid
-classDiagram
-  class Project {
-    UUID id
-    string name
-    +AddScene(Scene)
-    +ListScenes()
-  }
-  class Scene {
-    UUID id
-    string title
-    string summary
-    string content
-  }
-  Project "1" o-- "*" Scene
+flowchart LR
+  subgraph "Application Layer"
+    Orchestrator["Orchestrator (Baton service)"]
+    GraphWriteSvc["GraphWrite App Service"]
+  end
+  subgraph "Domain Layer"
+    ProjectAgg["Aggregate: Project"]
+    SceneEnt["Entity: Scene"]
+    Versioning["Value Obj: GraphVersion"]
+  end
+  subgraph "Infrastructure Layer"
+    Repos["Repositories (sqlc)"]
+    DB["SQLite (canonical store)"]
+    VectorDB["sqlite-vec (local vector DB)"]
+    Models["Model Providers (Ollama default; API keys optional)"]
+  end
+  UI["Wails React UI (DTOs via proto)"] -->|DTOs| Orchestrator
+  Orchestrator -->|domain calls| GraphWriteSvc
+  GraphWriteSvc -->|repos| Repos
+  Repos --> DB
+  Orchestrator -->|ContextBundle| VectorDB
+  Orchestrator -->|ModelSpec| Models
+  ProjectAgg o-- SceneEnt
+  Versioning -.-> GraphWriteSvc
 ```
+
+### Key seams
+- UI ↔ Application: protobuf DTOs for requests/responses (TS/Go generated)
+- Application ↔ Domain: method calls with domain types (no proto inside core)
+- Domain ↔ Persistence: repository interfaces (sqlc-backed) against SQLite
+- Application ↔ Context: Context Manager provides ContextBundle (RAG via sqlite-vec)
+- Application ↔ Models: ModelSelector chooses Ollama or API provider based on task/constraints
 
 ## Directive → Persisted Scene (Sequence)
 ```mermaid
@@ -67,7 +84,31 @@ sequenceDiagram
   Repo-->>Narr: ok
   Narr-->>App: ok
   App-->>UI: IssueDirectiveResponse(correlationId)
+
+### Seams-first sequence (Context + Model selection in loop)
+```mermaid
+sequenceDiagram
+  participant UI
+  participant App as Orchestrator
+  participant Ctx as ContextMgr
+  participant Sel as ModelSelector
+  participant Plot as PlotWeaver
+  participant GW as GraphWriteSvc
+  participant Repo as "Store (sqlc)"
+  UI->>App: IssueDirective(DirectiveDTO)
+  App->>Ctx: BuildContext(project, directive)
+  Ctx-->>App: ContextBundle
+  App->>Sel: ChooseModel(task, complexity, budget)
+  Sel-->>App: ModelSpec (Ollama default)
+  App->>Plot: ProcessDirective(directive, ContextBundle, ModelSpec)
+  Plot-->>App: SceneProposal
+  App->>GW: ApplySceneProposal(proposal)
+  GW->>Repo: Persist(scene)
+  Repo-->>GW: ok
+  GW-->>App: ok
+  App-->>UI: ProposalApplied(sceneId)
 ```
+
 
 ## Proto Seams (DTOs)
 - baton.v1: IssueDirectiveRequest/Response
