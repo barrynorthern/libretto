@@ -85,6 +85,7 @@ sequenceDiagram
   Repo-->>Narr: ok
   Narr-->>App: ok
   App-->>UI: IssueDirectiveResponse(correlationId)
+```
 
 ### Seams-first sequence (Context + Model selection in loop)
 
