@@ -1,4 +1,4 @@
-# 00008 – Local vector DB (sqlite-vec) and RAG pipeline (MVP)
+# 00008 – Local vector DB (sqlite-vec), RAG pipeline, and Wails desktop scaffold (MVP)
 
 Status: Proposed
 Owner: barrynorthern
@@ -14,8 +14,9 @@ Implement a minimal RAG pipeline using sqlite-vec:
 
 ## Scope
 - Add sqlite-vec dependency and migration
-- Create embedding pipeline stub (choose provider via config; Ollama or local CPU model first)
+- Create embedding pipeline stub (Ollama by default; optional API-key providers)
 - Implement internal/context/sqlitev retriever (Search)
+- Scaffold Wails desktop app (React + shadcn/Tailwind) with a Scenes page calling a binding
 - Unit tests with small vectors to validate k-NN results
 
 ## Acceptance criteria
