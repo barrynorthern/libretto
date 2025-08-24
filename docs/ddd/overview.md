@@ -17,13 +17,13 @@ Status: Proposed
 ```mermaid
 flowchart TB
   subgraph Monolith
-    App[internal/app Orchestrator]
-    Plot[internal/agents/plotweaver]
-    Narr[internal/agents/narrative]
-    Store[internal/graphwrite (Store + Repos)]
-    Ctx[internal/context (Context Manager: memory, RAG)]
+    App["internal/app Orchestrator"]
+    Plot["internal/agents/plotweaver"]
+    Narr["internal/agents/narrative"]
+    Store["internal/graphwrite (Store + Repos)"]
+    Ctx["internal/context (Context Manager: memory, RAG)"]
   end
-  UI[Desktop UI (Wails React)] <---> |Bindings + DTOs| App
+  UI["Desktop UI (Wails React)"] <---> |Bindings + DTOs| App
   App --> Plot
   App --> Narr
   App --> Ctx
@@ -56,7 +56,7 @@ sequenceDiagram
   participant Plot as PlotWeaver
   participant Ctx as ContextMgr
   participant Narr as Narrative
-  participant Repo as Store(sqlc)
+  participant Repo as "Store (sqlc)"
   UI->>App: IssueDirective(DirectiveDTO)
   App->>Ctx: BuildContext(project, directive)
   Ctx-->>App: ContextBundle
