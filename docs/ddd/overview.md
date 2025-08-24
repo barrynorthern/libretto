@@ -23,7 +23,7 @@ flowchart TB
     Store["internal/graphwrite (Store + Repos)"]
     Ctx["internal/context (Context Manager: memory, RAG)"]
   end
-  UI["Desktop UI (Wails React)"] <---> |Bindings + DTOs| App
+  UI["Desktop UI (Wails React)"] <--> |Bindings + DTOs| App
   App --> Plot
   App --> Narr
   App --> Ctx
@@ -54,8 +54,8 @@ flowchart LR
   Repos --> DB
   Orchestrator -->|ContextBundle| VectorDB
   Orchestrator -->|ModelSpec| Models
-  ProjectAgg o-- SceneEnt
-  Versioning -.-> GraphWriteSvc
+  ProjectAgg --> SceneEnt
+  Versioning --> GraphWriteSvc
 ```
 
 ### Key seams
@@ -66,6 +66,7 @@ flowchart LR
 - Application ↔ Models: ModelSelector chooses Ollama or API provider based on task/constraints
 
 ## Directive → Persisted Scene (Sequence)
+
 ```mermaid
 sequenceDiagram
   participant UI
@@ -86,6 +87,7 @@ sequenceDiagram
   App-->>UI: IssueDirectiveResponse(correlationId)
 
 ### Seams-first sequence (Context + Model selection in loop)
+
 ```mermaid
 sequenceDiagram
   participant UI
