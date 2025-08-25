@@ -1,30 +1,30 @@
 # Getting Started
 
-This walkthrough shows how to run Libretto locally and exercise the current event-driven flow.
+This guide helps you run the Libretto desktop scaffold and core tooling.
 
-## Install prerequisites
+## Prerequisites
 - Go 1.22+
-- Make
-- Docker (for emulators in later steps)
+- Node 18+ with corepack (pnpm)
+- Wails CLI (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
 
-## Run the services
-- `make dev-up`
-  - Starts API (8080), Plot Weaver (8081), GraphWrite (8082)
-  - Select publisher via env: `PUBLISHER=nop|devpush|pubsub` (default nop)
+## Common tasks (Make)
+Run `make help` to see available targets:
 
-## Issue a directive
-- `make dev-smoke`
-  - In DevPush mode, the API publishes a DirectiveIssued; Plot Weaver consumes it and emits SceneProposalReady.
+- proto: Run buf generate (protos -> gen/go, gen/ts)
+- lint-proto: Lint protobufs
+- build: Bazel build //...
+- test: go/bazel tests
+- wails-dev: Start Wails dev server for apps/desktop
+- wails-build: Build the desktop app
+- frontend-install: Install frontend deps with pnpm
+- frontend-build: Build the frontend
+- sqlc: Generate repository code once sqlc.yaml is added
 
-## Verify behavior
-- Look for logs like:
-  - "plotweaver: consumed=DirectiveIssued published=SceneProposalReady correlationId=..."
-  - "plotweaver publisher=devpush|nop|pubsub"
+## Desktop app (Wails)
+1. Install frontend deps: `make frontend-install`
+2. Start dev server: `make wails-dev`
+3. Build release binary: `make wails-build`
 
-## What’s next
-- Persistence: GraphWrite to Firestore emulator
-- Minimal UI: Canvas/Inspector reads scenes
-
-## Troubleshooting
-- If `go test ./...` fails, see bug ticket 00005-bug for known issues to resolve in a separate branch.
-
+## Notes
+- DTOs across the UI boundary are protobuf-generated (baton.v1, scene.v1). The app currently uses a simple DTO struct for ListScenes() and will switch to generated types when repositories are wired.
+- Offline-first: No external services are required to run the dev app.
