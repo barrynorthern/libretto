@@ -1,0 +1,16 @@
+syntax = "proto3";
+package libretto.scene.v1;
+
+option go_package = "github.com/barrynorthern/libretto/gen/go/libretto/scene/v1;scenev1";
+
+message Scene {
+  string id = 1;
+  string title = 2;
+  string summary = 3;
+  string content = 4;
+}
+
+message ListScenesResponse {
+  repeated Scene scenes = 1;
+}
+

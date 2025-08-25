@@ -26,3 +26,9 @@ terraform.tfstate*
 /bazel-bin
 /bazel-out
 /bazel-testlogs
+
+
+# Wails/Frontend
+**/node_modules/
+**/dist/
+apps/desktop/frontend/.vite/
