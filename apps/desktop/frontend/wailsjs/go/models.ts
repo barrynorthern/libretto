@@ -5,6 +5,7 @@ export namespace main {
 	    title: string;
 	    summary: string;
 	    content: string;
+	    created: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new SceneDTO(source);
@@ -16,6 +17,7 @@ export namespace main {
 	        this.title = source["title"];
 	        this.summary = source["summary"];
 	        this.content = source["content"];
+	        this.created = source["created"];
 	    }
 	}
 

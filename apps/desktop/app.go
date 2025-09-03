@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"sync"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 // SceneDTO mirrors libretto.scene.v1.Scene at the UI boundary.
@@ -11,26 +15,43 @@ type SceneDTO struct {
 	Title   string `json:"title"`
 	Summary string `json:"summary"`
 	Content string `json:"content"`
+	Created string `json:"created"`
 }
 
-// App struct
+// App holds minimal in-memory state for a usable scaffold.
 type App struct {
-	ctx context.Context
+	ctx    context.Context
+	mu     sync.Mutex
+	scenes []*SceneDTO
 }
 
 // NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
-}
+func NewApp() *App { return &App{scenes: []*SceneDTO{}} }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
-func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
-}
+// startup is called when the app starts.
+func (a *App) startup(ctx context.Context) { a.ctx = ctx }
 
-// ListScenes returns an array of scene DTOs.
-// For now, return an empty list; will wire to repository later.
+// ListScenes returns current scenes (in-memory for now).
 func (a *App) ListScenes() []*SceneDTO {
-	return []*SceneDTO{}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	// return a copy to avoid mutation from JS side
+	out := make([]*SceneDTO, len(a.scenes))
+	copy(out, a.scenes)
+	return out
+}
+
+// CreateScene adds a new scene and returns it.
+func (a *App) CreateScene(title, summary, content string) *SceneDTO {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	s := &SceneDTO{
+		Id:      uuid.NewString(),
+		Title:   title,
+		Summary: summary,
+		Content: content,
+		Created: time.Now().Format(time.RFC3339),
+	}
+	a.scenes = append(a.scenes, s)
+	return s
 }
