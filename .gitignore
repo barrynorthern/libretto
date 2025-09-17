@@ -1,34 +1,60 @@
-# OS
-.DS_Store
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 
-# Node/JS
-node_modules/
+# Test output files
+test-results.json
+coverage.out
+coverage.html
+
+# Built binaries
+bin/
 dist/
 
-# Env/Secrets
-.env
-.env.*
-.secrets/
+# Logs
+*.log
 
-# Terraform
-.terraform/
-.terraform.lock.hcl
-terraform.tfstate*
+# OS files
+.DS_Store
+Thumbs.db
 
-# IDE
+# IDE files
 .vscode/
 .idea/
+.kiro/
+*.swp
+*.swo
 
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
+# Test binary, built with `go test -c`
+*.test
 
-# Bazel outputs and symlinks
-/bazel-*
-/bazel-bin
-/bazel-out
-/bazel-testlogs
+# Output of the go coverage tool
+*.out
 
+# Dependency directories
+node_modules/
+vendor/
 
-# Wails/Frontend
-**/node_modules/
-**/dist/
-apps/desktop/frontend/.vite/
+# Temporary files
+*.tmp
+*.temp
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Bazel
+bazel-*
+
+# Wails build output
+build/
+app.syso
