@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "dbinspect_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/barrynorthern/libretto/cmd/dbinspect",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/db",
+        "//internal/types",
+        "@com_github_google_uuid//:go_default_library",
+        "@com_github_mattn_go_sqlite3//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "dbinspect",
+    embed = [":dbinspect_lib"],
+    visibility = ["//visibility:public"],
+)

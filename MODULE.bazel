@@ -17,6 +17,7 @@ _go_deps.from_file(go_mod = "//:go.mod")
 use_repo(_go_deps,
     "com_connectrpc_connect",
     "com_github_google_uuid",
+    "com_github_mattn_go_sqlite3",
     "org_golang_google_protobuf",
 )
 
