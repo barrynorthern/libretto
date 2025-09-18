@@ -11,11 +11,15 @@ import (
 	"net/http"
 
 	"github.com/barrynorthern/libretto/internal/db"
+	"github.com/barrynorthern/libretto/internal/graphwrite"
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 type Dashboard struct {
-	queries *db.Queries
+	queries      *db.Queries
+	database     *db.Database
+	graphService graphwrite.GraphWriteService
 }
 
 type ProjectSummary struct {
@@ -55,27 +59,45 @@ type Link struct {
 func main() {
 	var (
 		dbPath = flag.String("db", "libretto.db", "Path to SQLite database")
-		port   = flag.String("port", "8080", "Port to serve on")
+		port   = flag.String("port", "9000", "Port to serve on")
 	)
 	flag.Parse()
 
-	database, err := sql.Open("sqlite3", *dbPath)
+	// Initialize database with migrations
+	database, err := db.NewDatabase(*dbPath)
 	if err != nil {
 		log.Fatalf("Failed to open database: %v", err)
 	}
 	defer database.Close()
 
+	// Run migrations
+	ctx := context.Background()
+	if err := database.Migrate(ctx); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	// Initialize GraphWrite service
+	graphService := graphwrite.NewService(database)
+
 	dashboard := &Dashboard{
-		queries: db.New(database),
+		queries:      database.Queries(),
+		database:     database,
+		graphService: graphService,
 	}
 
 	http.HandleFunc("/", dashboard.handleHome)
 	http.HandleFunc("/project/", dashboard.handleProject)
 	http.HandleFunc("/graph/", dashboard.handleGraph)
 	http.HandleFunc("/api/graph/", dashboard.handleGraphAPI)
+	http.HandleFunc("/api/project/delete/", dashboard.handleDeleteProject)
+	http.HandleFunc("/demo", dashboard.handleDemo)
+	http.HandleFunc("/api/demo/create-story", dashboard.handleCreateStoryDemo)
+	http.HandleFunc("/api/demo/add-character", dashboard.handleAddCharacterDemo)
+	http.HandleFunc("/api/demo/update-scene", dashboard.handleUpdateSceneDemo)
 	http.HandleFunc("/static/", dashboard.handleStatic)
 
 	fmt.Printf("Dashboard server starting on http://localhost:%s\n", *port)
+	fmt.Printf("GraphWrite Demo available at: http://localhost:%s/demo\n", *port)
 	log.Fatal(http.ListenAndServe(":"+*port, nil))
 }
 
@@ -131,8 +153,12 @@ func (d *Dashboard) handleHome(w http.ResponseWriter, r *http.Request) {
         .stat-value { font-size: 24px; font-weight: bold; color: #2c3e50; }
         .stat-label { font-size: 12px; color: #7f8c8d; }
         .actions { margin-top: 15px; }
-        .btn { background: #3498db; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-right: 10px; }
+        .btn { background: #3498db; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin-right: 10px; border: none; cursor: pointer; }
         .btn:hover { background: #2980b9; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .delete-confirm { display: none; background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .delete-confirm.show { display: block; }
         .no-projects { text-align: center; color: #7f8c8d; padding: 40px; }
     </style>
 </head>
@@ -141,6 +167,9 @@ func (d *Dashboard) handleHome(w http.ResponseWriter, r *http.Request) {
         <div class="header">
             <h1>Libretto Narrative Engine Dashboard</h1>
             <p>Monitor and visualize your narrative graphs</p>
+            <div style="margin-top: 15px;">
+                <a href="/demo" class="btn">🚀 Try GraphWrite Demo</a>
+            </div>
         </div>
 
         {{if .}}
@@ -174,6 +203,13 @@ func (d *Dashboard) handleHome(w http.ResponseWriter, r *http.Request) {
                 <div class="actions">
                     <a href="/project/{{.Project.ID}}" class="btn">View Details</a>
                     <a href="/graph/{{.Project.ID}}" class="btn">Visualize Graph</a>
+                    <button onclick="confirmDelete('{{.Project.ID}}', '{{.Project.Name}}')" class="btn btn-danger">Delete</button>
+                </div>
+                
+                <div id="delete-confirm-{{.Project.ID}}" class="delete-confirm">
+                    <p><strong>⚠️ Warning:</strong> This will permanently delete the project "{{.Project.Name}}" and all its data.</p>
+                    <button onclick="deleteProject('{{.Project.ID}}')" class="btn btn-danger">Confirm Delete</button>
+                    <button onclick="cancelDelete('{{.Project.ID}}')" class="btn">Cancel</button>
                 </div>
             </div>
             {{end}}
@@ -184,6 +220,53 @@ func (d *Dashboard) handleHome(w http.ResponseWriter, r *http.Request) {
             </div>
         {{end}}
     </div>
+
+    <script>
+        function confirmDelete(projectId, projectName) {
+            const confirmDiv = document.getElementById('delete-confirm-' + projectId);
+            confirmDiv.classList.add('show');
+        }
+
+        function cancelDelete(projectId) {
+            const confirmDiv = document.getElementById('delete-confirm-' + projectId);
+            confirmDiv.classList.remove('show');
+        }
+
+        async function deleteProject(projectId) {
+            try {
+                const response = await fetch('/api/project/delete/' + projectId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Show success message
+                    alert('Project "' + result.projectName + '" deleted successfully!');
+                    // Reload the page to refresh the project list
+                    window.location.reload();
+                } else {
+                    // Handle specific error cases
+                    if (response.status === 409 && result.sharedEntities) {
+                        // Shared entities conflict
+                        let message = result.message + '\n\nShared entities:\n';
+                        result.sharedEntities.forEach(entity => {
+                            message += '• ' + entity + '\n';
+                        });
+                        alert(message);
+                    } else {
+                        throw new Error(result.error || 'Failed to delete project');
+                    }
+                }
+            } catch (error) {
+                alert('Error deleting project: ' + error.message);
+                console.error('Delete error:', error);
+            }
+        }
+    </script>
 </body>
 </html>
 `
@@ -621,33 +704,62 @@ func (d *Dashboard) handleGraphAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get entities and relationships
-	entities, err := d.queries.ListEntitiesByVersion(ctx, workingSet.ID)
+	// Use GraphWrite service to get entities with logical IDs
+	entities, err := d.graphService.ListEntities(ctx, workingSet.ID, graphwrite.EntityFilter{})
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get entities: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	relationships, err := d.queries.ListRelationshipsByVersion(ctx, workingSet.ID)
+	// Get relationships using database queries but map to logical IDs
+	dbRelationships, err := d.queries.ListRelationshipsByVersion(ctx, workingSet.ID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get relationships: %v", err), http.StatusInternalServerError)
 		return
 	}
 
+	// Get database entities to create mapping from database ID to logical ID
+	dbEntities, err := d.queries.ListEntitiesByVersion(ctx, workingSet.ID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get database entities: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Create mapping from database ID to logical ID
+	dbToLogicalID := make(map[string]string)
+	for _, dbEntity := range dbEntities {
+		var data map[string]any
+		if err := json.Unmarshal(dbEntity.Data, &data); err != nil {
+			continue
+		}
+		
+		if logicalID, exists := data["logical_id"].(string); exists {
+			dbToLogicalID[dbEntity.ID] = logicalID
+		} else {
+			// Fallback for entities without logical_id (first version entities)
+			dbToLogicalID[dbEntity.ID] = dbEntity.ID
+		}
+	}
+
 	// Convert to graph visualization format
 	graph := GraphVisualization{
 		Nodes: make([]Node, len(entities)),
-		Links: make([]Link, len(relationships)),
+		Links: []Link{},
 	}
 
-	// Count connections for each entity
+	// Count connections for each logical entity ID
 	connectionCounts := make(map[string]int)
-	for _, rel := range relationships {
-		connectionCounts[rel.FromEntityID]++
-		connectionCounts[rel.ToEntityID]++
+	for _, rel := range dbRelationships {
+		fromLogicalID := dbToLogicalID[rel.FromEntityID]
+		toLogicalID := dbToLogicalID[rel.ToEntityID]
+		
+		if fromLogicalID != "" && toLogicalID != "" {
+			connectionCounts[fromLogicalID]++
+			connectionCounts[toLogicalID]++
+		}
 	}
 
-	// Create nodes
+	// Create nodes using logical IDs
 	typeGroups := map[string]int{
 		"Scene":     1,
 		"Character": 2,
@@ -659,7 +771,7 @@ func (d *Dashboard) handleGraphAPI(w http.ResponseWriter, r *http.Request) {
 
 	for i, entity := range entities {
 		graph.Nodes[i] = Node{
-			ID:    entity.ID,
+			ID:    entity.ID, // This is now the logical ID
 			Name:  entity.Name,
 			Type:  entity.EntityType,
 			Group: typeGroups[entity.EntityType],
@@ -667,13 +779,18 @@ func (d *Dashboard) handleGraphAPI(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Create links
-	for i, rel := range relationships {
-		graph.Links[i] = Link{
-			Source: rel.FromEntityID,
-			Target: rel.ToEntityID,
-			Type:   rel.RelationshipType,
-			Value:  1,
+	// Create links using logical IDs
+	for _, rel := range dbRelationships {
+		fromLogicalID := dbToLogicalID[rel.FromEntityID]
+		toLogicalID := dbToLogicalID[rel.ToEntityID]
+		
+		if fromLogicalID != "" && toLogicalID != "" {
+			graph.Links = append(graph.Links, Link{
+				Source: fromLogicalID,
+				Target: toLogicalID,
+				Type:   rel.RelationshipType,
+				Value:  1,
+			})
 		}
 	}
 
@@ -727,4 +844,697 @@ func (d *Dashboard) getProjectStats(ctx context.Context, versionID string) Proje
 	}
 
 	return stats
+}
+
+// Demo handlers to showcase GraphWrite service functionality
+
+func (d *Dashboard) handleDemo(w http.ResponseWriter, r *http.Request) {
+	tmpl := `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GraphWrite Service Demo - Libretto Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .demo-section { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn { background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+        .btn:hover { background: #2980b9; }
+        .btn:disabled { background: #bdc3c7; cursor: not-allowed; }
+        .success { background: #d5f4e6; border: 1px solid #27ae60; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .error { background: #fadbd8; border: 1px solid #e74c3c; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; margin: 10px 0; }
+        .version-info { background: #e8f4f8; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .entity-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 15px 0; }
+        .entity-card { border: 1px solid #ddd; border-radius: 4px; padding: 10px; }
+        .entity-type { background: #3498db; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-bottom: 5px; display: inline-block; }
+        .relationship-list { list-style: none; padding: 0; }
+        .relationship-list li { padding: 5px; border-bottom: 1px solid #eee; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>GraphWrite Service Demo</h1>
+            <p>Interactive demonstration of the narrative graph versioning system</p>
+            <a href="/" class="btn">← Back to Dashboard</a>
+        </div>
+
+        <div class="demo-section">
+            <h2>Step 1: Create Initial Story</h2>
+            <p>Create a new project with an initial scene and character, demonstrating entity creation and relationship management.</p>
+            <button id="create-story-btn" class="btn" onclick="createStory()">Create Story</button>
+            <div id="create-story-result"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Step 2: Add Character</h2>
+            <p>Add a new character to the story and create relationships, demonstrating delta application and versioning.</p>
+            <button id="add-character-btn" class="btn" onclick="addCharacter()" disabled>Add Character</button>
+            <div id="add-character-result"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Step 3: Update Scene</h2>
+            <p>Modify the existing scene content, demonstrating entity updates and version history.</p>
+            <button id="update-scene-btn" class="btn" onclick="updateScene()" disabled>Update Scene</button>
+            <div id="update-scene-result"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Current State</h2>
+            <div id="current-state">
+                <p>No story created yet. Start with Step 1.</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Operation Log</h2>
+            <div id="operation-log" class="log">
+                Ready to demonstrate GraphWrite service...\n
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentProjectId = null;
+        let currentVersionId = null;
+        let sceneId = null;
+        let characterId = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('operation-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += ` + "`[${timestamp}] ${message}\\n`" + `;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showResult(elementId, success, message, data = null) {
+            const element = document.getElementById(elementId);
+            const className = success ? 'success' : 'error';
+            let html = ` + "`<div class=\"${className}\">${message}</div>`" + `;
+            
+            if (data) {
+                html += ` + "`<div class=\"version-info\">Version ID: ${data.versionId}</div>`" + `;
+                if (data.entities) {
+                    html += '<h4>Entities:</h4><div class="entity-list">';
+                    data.entities.forEach(entity => {
+                        html += ` + "`<div class=\"entity-card\"><div class=\"entity-type\">${entity.EntityType}</div><strong>${entity.Name}</strong><br><small>ID: ${entity.ID}</small></div>`" + `;
+                    });
+                    html += '</div>';
+                }
+                if (data.relationships) {
+                    html += '<h4>Relationships:</h4><ul class="relationship-list">';
+                    data.relationships.forEach(rel => {
+                        html += ` + "`<li>${rel.type}: ${rel.from} → ${rel.to}</li>`" + `;
+                    });
+                    html += '</ul>';
+                }
+            }
+            
+            element.innerHTML = html;
+        }
+
+        async function createStory() {
+            log('Creating initial story with scene and character...');
+            
+            try {
+                const response = await fetch('/api/demo/create-story', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    currentProjectId = result.projectId;
+                    currentVersionId = result.versionId;
+                    sceneId = result.sceneId;
+                    characterId = result.characterId;
+                    
+                    log(` + "`Story created successfully! Project: ${currentProjectId}, Version: ${currentVersionId}`" + `);
+                    showResult('create-story-result', true, 'Story created successfully!', {
+                        versionId: currentVersionId,
+                        entities: result.entities,
+                        relationships: result.relationships
+                    });
+                    
+                    // Enable next step
+                    document.getElementById('add-character-btn').disabled = false;
+                    updateCurrentState();
+                } else {
+                    throw new Error(result.error || 'Failed to create story');
+                }
+            } catch (error) {
+                log(` + "`Error creating story: ${error.message}`" + `);
+                showResult('create-story-result', false, ` + "`Error: ${error.message}`" + `);
+            }
+        }
+
+        async function addCharacter() {
+            log('Adding new character and creating relationships...');
+            
+            try {
+                const response = await fetch('/api/demo/add-character', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProjectId,
+                        parentVersionId: currentVersionId,
+                        sceneId: sceneId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    currentVersionId = result.versionId;
+                    
+                    log(` + "`Character added successfully! New version: ${currentVersionId}`" + `);
+                    showResult('add-character-result', true, 'Character added successfully!', {
+                        versionId: currentVersionId,
+                        entities: result.entities,
+                        relationships: result.relationships
+                    });
+                    
+                    // Enable next step
+                    document.getElementById('update-scene-btn').disabled = false;
+                    updateCurrentState();
+                } else {
+                    throw new Error(result.error || 'Failed to add character');
+                }
+            } catch (error) {
+                log(` + "`Error adding character: ${error.message}`" + `);
+                showResult('add-character-result', false, ` + "`Error: ${error.message}`" + `);
+            }
+        }
+
+        async function updateScene() {
+            log('Updating scene content...');
+            
+            try {
+                const response = await fetch('/api/demo/update-scene', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: currentProjectId,
+                        parentVersionId: currentVersionId,
+                        sceneId: sceneId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    currentVersionId = result.versionId;
+                    
+                    log(` + "`Scene updated successfully! New version: ${currentVersionId}`" + `);
+                    showResult('update-scene-result', true, 'Scene updated successfully!', {
+                        versionId: currentVersionId,
+                        entities: result.entities,
+                        relationships: result.relationships
+                    });
+                    
+                    updateCurrentState();
+                } else {
+                    throw new Error(result.error || 'Failed to update scene');
+                }
+            } catch (error) {
+                log(` + "`Error updating scene: ${error.message}`" + `);
+                showResult('update-scene-result', false, ` + "`Error: ${error.message}`" + `);
+            }
+        }
+
+        async function updateCurrentState() {
+            if (!currentProjectId || !currentVersionId) {
+                return;
+            }
+            
+            try {
+                // Get current entities and relationships
+                const response = await fetch(` + "`/api/graph/${currentProjectId}`" + `);
+                const graphData = await response.json();
+                
+                let html = ` + "`<h3>Current Story State</h3>`" + `;
+                html += ` + "`<p><strong>Project ID:</strong> ${currentProjectId}</p>`" + `;
+                html += ` + "`<p><strong>Current Version:</strong> ${currentVersionId}</p>`" + `;
+                html += ` + "`<p><strong>Total Entities:</strong> ${graphData.nodes.length}</p>`" + `;
+                html += ` + "`<p><strong>Total Relationships:</strong> ${graphData.links.length}</p>`" + `;
+                
+                if (graphData.nodes.length > 0) {
+                    html += '<h4>Entities:</h4><div class="entity-list">';
+                    graphData.nodes.forEach(node => {
+                        html += ` + "`<div class=\"entity-card\"><div class=\"entity-type\">${node.type}</div><strong>${node.name}</strong><br><small>Connections: ${node.size}</small></div>`" + `;
+                    });
+                    html += '</div>';
+                }
+                
+                if (graphData.links.length > 0) {
+                    html += '<h4>Relationships:</h4><ul class="relationship-list">';
+                    graphData.links.forEach(link => {
+                        const sourceNode = graphData.nodes.find(n => n.id === link.source);
+                        const targetNode = graphData.nodes.find(n => n.id === link.target);
+                        html += ` + "`<li>${link.type}: ${sourceNode?.name || link.source} → ${targetNode?.name || link.target}</li>`" + `;
+                    });
+                    html += '</ul>';
+                }
+                
+                html += ` + "`<p><a href=\"/project/${currentProjectId}\" class=\"btn\">View Full Project Details</a></p>`" + `;
+                
+                document.getElementById('current-state').innerHTML = html;
+            } catch (error) {
+                console.error('Error updating current state:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+`
+
+	t, err := template.New("demo").Parse(tmpl)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Template error: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := t.Execute(w, nil); err != nil {
+		http.Error(w, fmt.Sprintf("Template execution error: %v", err), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (d *Dashboard) handleCreateStoryDemo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx := context.Background()
+
+	// Create a new project
+	projectID := uuid.New().String()
+	_, err := d.queries.CreateProject(ctx, db.CreateProjectParams{
+		ID:          projectID,
+		Name:        "GraphWrite Demo Story",
+		Theme:       sql.NullString{String: "Adventure", Valid: true},
+		Genre:       sql.NullString{String: "Fantasy", Valid: true},
+		Description: sql.NullString{String: "A story created to demonstrate the GraphWrite service", Valid: true},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create project: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Create initial graph version
+	initialVersionID := uuid.New().String()
+	_, err = d.queries.CreateGraphVersion(ctx, db.CreateGraphVersionParams{
+		ID:           initialVersionID,
+		ProjectID:    projectID,
+		Name:         sql.NullString{String: "Initial Version", Valid: true},
+		Description:  sql.NullString{String: "Starting point for demo story", Valid: true},
+		IsWorkingSet: true,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create initial version: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Use GraphWrite service to create scene and character
+	sceneID := uuid.New().String()
+	characterID := uuid.New().String()
+
+	response, err := d.graphService.Apply(ctx, &graphwrite.ApplyRequest{
+		ParentVersionID: initialVersionID,
+		Deltas: []*graphwrite.Delta{
+			{
+				Operation:  "create",
+				EntityType: "Scene",
+				EntityID:   sceneID,
+				Fields: map[string]any{
+					"name":    "Opening Scene",
+					"title":   "The Mysterious Tavern",
+					"summary": "Our hero enters a tavern filled with intrigue",
+					"content": "The wooden door creaked as Elena pushed it open, revealing a dimly lit tavern...",
+				},
+			},
+			{
+				Operation:  "create",
+				EntityType: "Character",
+				EntityID:   characterID,
+				Fields: map[string]any{
+					"name":        "Elena",
+					"role":        "protagonist",
+					"description": "A brave archaeologist seeking ancient artifacts",
+					"personality": "curious, determined, resourceful",
+				},
+				Relationships: []*graphwrite.RelationshipDelta{
+					{
+						Operation:        "create",
+						FromEntityID:     sceneID,
+						ToEntityID:       characterID,
+						RelationshipType: "features",
+						Properties: map[string]any{
+							"importance": "primary",
+							"role":       "main character",
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to apply deltas: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Update the working set to point to the new version with entities
+	err = d.queries.SetWorkingSet(ctx, db.SetWorkingSetParams{
+		ID:        response.GraphVersionID,
+		ProjectID: projectID,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update working set: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get the created entities for response
+	entities, err := d.graphService.ListEntities(ctx, response.GraphVersionID, graphwrite.EntityFilter{})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list entities: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get relationships (we'll construct them manually for the demo)
+	_ = sceneID // Mark as used
+
+	relationships := []map[string]string{
+		{
+			"type": "features",
+			"from": "Opening Scene",
+			"to":   "Elena",
+		},
+	}
+
+	result := map[string]any{
+		"projectId":     projectID,
+		"versionId":     response.GraphVersionID,
+		"sceneId":       sceneID,
+		"characterId":   characterID,
+		"entities":      entities,
+		"relationships": relationships,
+		"applied":       response.Applied,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+func (d *Dashboard) handleAddCharacterDemo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		ProjectID       string `json:"projectId"`
+		ParentVersionID string `json:"parentVersionId"`
+		SceneID         string `json:"sceneId"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+
+	// Add a new character and create relationships
+	villainID := uuid.New().String()
+	locationID := uuid.New().String()
+
+	response, err := d.graphService.Apply(ctx, &graphwrite.ApplyRequest{
+		ParentVersionID: req.ParentVersionID,
+		Deltas: []*graphwrite.Delta{
+			{
+				Operation:  "create",
+				EntityType: "Character",
+				EntityID:   villainID,
+				Fields: map[string]any{
+					"name":        "Mordak the Shadow",
+					"role":        "antagonist",
+					"description": "A mysterious figure seeking the same artifacts as Elena",
+					"personality": "cunning, ruthless, intelligent",
+				},
+				Relationships: []*graphwrite.RelationshipDelta{
+					{
+						Operation:        "create",
+						FromEntityID:     req.SceneID,
+						ToEntityID:       villainID,
+						RelationshipType: "features",
+						Properties: map[string]any{
+							"importance": "secondary",
+							"role":       "antagonist",
+						},
+					},
+				},
+			},
+			{
+				Operation:  "create",
+				EntityType: "Location",
+				EntityID:   locationID,
+				Fields: map[string]any{
+					"name":        "The Whispering Tavern",
+					"description": "A tavern known for its secretive patrons and hidden passages",
+					"atmosphere":  "mysterious, dimly lit, filled with whispers",
+				},
+				Relationships: []*graphwrite.RelationshipDelta{
+					{
+						Operation:        "create",
+						FromEntityID:     req.SceneID,
+						ToEntityID:       locationID,
+						RelationshipType: "occurs_at",
+						Properties: map[string]any{
+							"time": "evening",
+							"mood": "tense",
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to apply deltas: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Update the working set to point to the new version
+	err = d.queries.SetWorkingSet(ctx, db.SetWorkingSetParams{
+		ID:        response.GraphVersionID,
+		ProjectID: req.ProjectID,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update working set: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated entities
+	entities, err := d.graphService.ListEntities(ctx, response.GraphVersionID, graphwrite.EntityFilter{})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list entities: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	relationships := []map[string]string{
+		{
+			"type": "features",
+			"from": "Opening Scene",
+			"to":   "Elena",
+		},
+		{
+			"type": "features",
+			"from": "Opening Scene",
+			"to":   "Mordak the Shadow",
+		},
+		{
+			"type": "occurs_at",
+			"from": "Opening Scene",
+			"to":   "The Whispering Tavern",
+		},
+	}
+
+	result := map[string]any{
+		"versionId":     response.GraphVersionID,
+		"entities":      entities,
+		"relationships": relationships,
+		"applied":       response.Applied,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+func (d *Dashboard) handleUpdateSceneDemo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req struct {
+		ProjectID       string `json:"projectId"`
+		ParentVersionID string `json:"parentVersionId"`
+		SceneID         string `json:"sceneId"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+
+	// Update the scene with more detailed content
+	response, err := d.graphService.Apply(ctx, &graphwrite.ApplyRequest{
+		ParentVersionID: req.ParentVersionID,
+		Deltas: []*graphwrite.Delta{
+			{
+				Operation:  "update",
+				EntityType: "Scene",
+				EntityID:   req.SceneID,
+				Fields: map[string]any{
+					"name":    "Opening Scene - Enhanced",
+					"title":   "The Whispering Tavern - First Encounter",
+					"summary": "Elena enters the tavern and has her first encounter with Mordak, setting up the central conflict",
+					"content": `The wooden door creaked ominously as Elena pushed it open, revealing a dimly lit tavern filled with hooded figures. The air was thick with pipe smoke and whispered conversations that died as she entered.
+
+She approached the bar, her archaeologist's eye noting the ancient symbols carved into the wooden beams. The bartender, a grizzled man with knowing eyes, nodded toward a corner table where a figure in a dark cloak sat alone.
+
+"You're looking for the same thing he is," the bartender whispered. "The Artifact of Echoing Memories. But be careful - Mordak the Shadow doesn't share well."
+
+Elena's hand instinctively moved to the leather satchel containing her research notes. This was going to be more complicated than she'd anticipated.`,
+					"mood":      "tense, mysterious",
+					"conflict":  "Elena vs Mordak - competing for the same artifact",
+					"revision":  2,
+				},
+			},
+		},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to apply deltas: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Update the working set to point to the new version
+	err = d.queries.SetWorkingSet(ctx, db.SetWorkingSetParams{
+		ID:        response.GraphVersionID,
+		ProjectID: req.ProjectID,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update working set: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Get updated entities
+	entities, err := d.graphService.ListEntities(ctx, response.GraphVersionID, graphwrite.EntityFilter{})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list entities: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	relationships := []map[string]string{
+		{
+			"type": "features",
+			"from": "Opening Scene - Enhanced",
+			"to":   "Elena",
+		},
+		{
+			"type": "features",
+			"from": "Opening Scene - Enhanced",
+			"to":   "Mordak the Shadow",
+		},
+		{
+			"type": "occurs_at",
+			"from": "Opening Scene - Enhanced",
+			"to":   "The Whispering Tavern",
+		},
+	}
+
+	result := map[string]any{
+		"versionId":     response.GraphVersionID,
+		"entities":      entities,
+		"relationships": relationships,
+		"applied":       response.Applied,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+// handleDeleteProject handles project deletion requests
+func (d *Dashboard) handleDeleteProject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" && r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	projectID := r.URL.Path[len("/api/project/delete/"):]
+	if projectID == "" {
+		http.Error(w, "Project ID required", http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.Background()
+
+	// Verify project exists
+	project, err := d.queries.GetProject(ctx, projectID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Project not found: %v", err), http.StatusNotFound)
+		return
+	}
+
+	// Check if project has shared entities (optional safety check)
+	sharedEntities, err := d.graphService.ListSharedEntities(ctx)
+	if err == nil {
+		var sharedInThisProject []string
+		for _, entity := range sharedEntities {
+			for _, projectName := range entity.Projects {
+				if projectName == project.Name {
+					sharedInThisProject = append(sharedInThisProject, entity.Name)
+					break
+				}
+			}
+		}
+		
+		// If there are shared entities, include a warning in the response
+		if len(sharedInThisProject) > 0 {
+			response := map[string]any{
+				"success": false,
+				"error":   "Cannot delete project with shared entities",
+				"message": fmt.Sprintf("Project '%s' contains %d shared entities that appear in other projects. Delete those projects first or remove the shared entities.", project.Name, len(sharedInThisProject)),
+				"sharedEntities": sharedInThisProject,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+	}
+
+	// Delete the project (CASCADE will handle related data)
+	err = d.queries.DeleteProject(ctx, projectID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to delete project: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Return success response
+	response := map[string]any{
+		"success":     true,
+		"message":     fmt.Sprintf("Project '%s' deleted successfully", project.Name),
+		"projectId":   projectID,
+		"projectName": project.Name,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }

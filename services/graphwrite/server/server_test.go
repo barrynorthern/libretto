@@ -6,10 +6,11 @@ import (
 
 	"connectrpc.com/connect"
 	graphv1 "github.com/barrynorthern/libretto/gen/go/libretto/graph/v1"
+	"github.com/barrynorthern/libretto/internal/graphwrite"
 )
 
 func TestApplyRejectsEmptyDeltas(t *testing.T) {
-	s := &GraphWriteServer{Store: fakeStore{version: "01JF00", count: 0}}
+	s := NewGraphWriteServer(&mockGraphWriteService{version: "01JF00", count: 0})
 	req := connect.NewRequest(&graphv1.ApplyRequest{ParentVersionId: "01JROOT", Deltas: []*graphv1.Delta{}})
 	_, err := s.Apply(context.Background(), req)
 	if err == nil {
@@ -20,18 +21,36 @@ func TestApplyRejectsEmptyDeltas(t *testing.T) {
 	}
 }
 
-type fakeStore struct {
+type mockGraphWriteService struct {
 	version string
 	count   int32
 	err     error
 }
 
-func (f fakeStore) Apply(parent string, deltas []*graphv1.Delta) (string, int32, error) {
-	return f.version, f.count, f.err
+func (m *mockGraphWriteService) Apply(ctx context.Context, req *graphwrite.ApplyRequest) (*graphwrite.ApplyResponse, error) {
+	if len(req.Deltas) == 0 {
+		return nil, m.err
+	}
+	return &graphwrite.ApplyResponse{
+		GraphVersionID: m.version,
+		Applied:        m.count,
+	}, m.err
+}
+
+func (m *mockGraphWriteService) GetVersion(ctx context.Context, versionID string) (*graphwrite.GraphVersion, error) {
+	return nil, m.err
+}
+
+func (m *mockGraphWriteService) ListEntities(ctx context.Context, versionID string, filter graphwrite.EntityFilter) ([]*graphwrite.Entity, error) {
+	return nil, m.err
+}
+
+func (m *mockGraphWriteService) GetNeighbors(ctx context.Context, entityID string, relationshipType string) ([]*graphwrite.Entity, error) {
+	return nil, m.err
 }
 
 func TestApplySuccess(t *testing.T) {
-	s := &GraphWriteServer{Store: fakeStore{version: "01JF00", count: 2}}
+	s := NewGraphWriteServer(&mockGraphWriteService{version: "01JF00", count: 2})
 	req := connect.NewRequest(&graphv1.ApplyRequest{ParentVersionId: "01JROOT", Deltas: []*graphv1.Delta{{Op: "create"}, {Op: "create"}}})
 	res, err := s.Apply(context.Background(), req)
 	if err != nil {

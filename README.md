@@ -1,6 +1,17 @@
 # Libretto Narrative Engine
 
-A multi-agent narrative orchestration engine where users act as "Conductors" directing specialized AI agents to build a Living Narrative graph.
+A revolutionary multi-agent narrative orchestration engine where users act as "Conductors" directing specialized AI agents to build interconnected Living Narrative graphs.
+
+## 🌟 Key Innovation: Cross-Project Entity Continuity
+
+**"Elena must always be Elena"** - Characters maintain their identity and evolution across multiple related projects, enabling:
+
+- **Epic Multi-Book Series**: Elena from Book 1 is the same Elena in Book 3, carrying forward her complete character development
+- **Shared Universes**: Characters appear across spin-offs, crossovers, and collaborative stories
+- **Narrative Continuity**: Relationships, skills, and character growth persist across the entire story universe
+- **Collaborative World-Building**: Multiple creators can share characters while maintaining consistency
+
+[Learn more about Cross-Project Entity Continuity →](docs/cross-project-continuity.md)
 
 ## Quick Start
 
