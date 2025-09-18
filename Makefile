@@ -28,6 +28,7 @@ help:
 	@echo "  test             - Run all tests (unit + integration)"
 	@echo "  test-unit        - Run unit tests only"
 	@echo "  test-integration - Run integration test suite"
+	@echo "  test-cross-project - Run cross-project continuity demo"
 	@echo "  test-coverage    - Run tests with coverage report"
 	@echo "  test-watch       - Run tests in watch mode"
 	@echo ""
@@ -87,7 +88,7 @@ dev-down:
 	@echo "Stopped local services (best effort)."
 
 # Testing targets
-test: test-unit test-integration
+test: test-unit test-integration test-cross-project
 	@echo "All tests completed successfully"
 
 test-unit:
@@ -98,6 +99,12 @@ test-integration:
 	@echo "Running integration tests..."
 	go run cmd/integration-test/main.go -v -output test-results.json
 	@echo "Integration test results saved to test-results.json"
+
+test-cross-project:
+	@echo "Running cross-project continuity demo..."
+	@echo "🏰 Testing Elena Stormwind's journey across 3 books..."
+	bazel test //internal/graphwrite:cross_project_demo_test --test_output=all
+	@echo "✅ Cross-project entity continuity verified!"
 
 test-all: test-unit test-integration
 	@echo "Complete test suite finished"

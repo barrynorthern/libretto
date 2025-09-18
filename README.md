@@ -86,9 +86,10 @@ make wails-dev        # Desktop app development with live reload
 
 #### Testing
 ```bash
-make test             # Run all tests (unit + integration)
+make test             # Run all tests (unit + integration + cross-project)
 make test-unit        # Run unit tests only
 make test-integration # Run comprehensive integration tests
+make test-cross-project # Run Elena Stormwind cross-project demo
 make test-coverage    # Generate coverage report
 make test-watch       # Run tests in watch mode (requires entr)
 ```

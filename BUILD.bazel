@@ -35,7 +35,9 @@ go_library(
     deps = [
         ":app_lib",
         "//gen/go/libretto/baton/v1/batonv1connect:baton_v1_connect",
+        "//internal/db",
         "//internal/graphwrite:graphwrite_lib",
+        "@com_github_google_uuid//:uuid",
     ],
 )
 

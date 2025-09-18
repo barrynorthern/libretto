@@ -49,6 +49,22 @@ func (m *mockGraphWriteService) GetNeighbors(ctx context.Context, entityID strin
 	return nil, m.err
 }
 
+func (m *mockGraphWriteService) GetNeighborsInVersion(ctx context.Context, versionID string, logicalEntityID string, relationshipType string) ([]*graphwrite.Entity, error) {
+	return nil, m.err
+}
+
+func (m *mockGraphWriteService) ImportEntity(ctx context.Context, targetVersionID, sourceProjectID, entityLogicalID string) (*graphwrite.Entity, error) {
+	return nil, m.err
+}
+
+func (m *mockGraphWriteService) GetEntityHistory(ctx context.Context, entityLogicalID string) ([]*graphwrite.EntityVersion, error) {
+	return nil, m.err
+}
+
+func (m *mockGraphWriteService) ListSharedEntities(ctx context.Context) ([]*graphwrite.SharedEntity, error) {
+	return nil, m.err
+}
+
 func TestApplySuccess(t *testing.T) {
 	s := NewGraphWriteServer(&mockGraphWriteService{version: "01JF00", count: 2})
 	req := connect.NewRequest(&graphv1.ApplyRequest{ParentVersionId: "01JROOT", Deltas: []*graphv1.Delta{{Op: "create"}, {Op: "create"}}})
