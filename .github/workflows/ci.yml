@@ -75,15 +75,22 @@ jobs:
           go-version: '1.22.5'
       - name: Run cross-project demo test
         run: bazel test //internal/graphwrite:cross_project_demo_test --test_output=all
+      - name: Create Elena demo data for dashboard
+        run: go run cmd/demo-cross-project/main.go -db libretto-ci.db -clean
       - name: Start dashboard in background
         run: |
-          nohup go run cmd/dashboard/main.go > dashboard.log 2>&1 &
+          nohup go run cmd/dashboard/main.go -db libretto-ci.db -port 9000 > dashboard.log 2>&1 &
           echo $! > dashboard.pid
           sleep 10
       - name: Test dashboard endpoints
         run: |
-          curl -f http://localhost:9000/ || (echo "Dashboard home failed" && exit 1)
-          curl -f http://localhost:9000/demo || (echo "Dashboard demo failed" && exit 1)
+          echo "🔍 Checking if dashboard is running..."
+          ps aux | grep dashboard || true
+          echo "📋 Dashboard logs:"
+          cat dashboard.log || true
+          echo "🌐 Testing dashboard endpoints..."
+          curl -f http://localhost:9000/ || (echo "❌ Dashboard home failed" && cat dashboard.log && exit 1)
+          curl -f http://localhost:9000/demo || (echo "❌ Dashboard demo failed" && cat dashboard.log && exit 1)
           echo "✅ Dashboard endpoints working"
       - name: Start monolith in background  
         run: |
