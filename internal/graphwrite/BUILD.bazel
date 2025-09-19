@@ -1,9 +1,46 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "graphwrite_lib",
     srcs = ["store.go", "read.go"],
     importpath = "github.com/barrynorthern/libretto/internal/graphwrite",
     visibility = ["//visibility:public"],
+    deps = [
+        "//internal/db",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "cross_project_demo_test",
+    srcs = ["cross_project_demo_test.go"],
+    embed = [":graphwrite_lib"],
+    deps = [
+        "//internal/db",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "stable_id_demo_test", 
+    srcs = ["stable_id_demo_test.go"],
+    embed = [":graphwrite_lib"],
+    deps = [
+        "//internal/db",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_test(
+    name = "graphwrite_test",
+    srcs = [
+        "store_test.go",
+        "example_test.go",
+    ],
+    embed = [":graphwrite_lib"],
+    deps = [
+        "//internal/db",
+        "@com_github_google_uuid//:uuid",
+    ],
 )
 

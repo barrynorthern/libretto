@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "demo-cross-project_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/barrynorthern/libretto/cmd/demo-cross-project",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//internal/db",
+        "//internal/graphwrite:graphwrite_lib",
+        "@com_github_google_uuid//:uuid",
+    ],
+)
+
+go_binary(
+    name = "demo-cross-project",
+    embed = [":demo-cross-project_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -52,6 +52,11 @@ func (d *Database) Queries() *Queries {
 	return d.queries
 }
 
+// DB returns the underlying database connection
+func (d *Database) DB() *sql.DB {
+	return d.db
+}
+
 // Migrate runs all pending migrations
 func (d *Database) Migrate(ctx context.Context) error {
 	// Create migrations table if it doesn't exist

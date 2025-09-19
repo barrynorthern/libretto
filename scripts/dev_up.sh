@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Starts the local monolith binary (API + agents + store) with Bazel on dev port.
+# Starts the local monolith binary with cross-project functionality
 # Stop with Ctrl+C; all child processes are cleaned up.
 
 API_PORT="${API_PORT:-8080}"
-
+DASHBOARD_PORT="${DASHBOARD_PORT:-9000}"
 
 port_in_use() {
   local port="$1"
@@ -30,7 +30,7 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # Preflight: ensure ports are free
-for name in API:${API_PORT}; do
+for name in API:${API_PORT} DASHBOARD:${DASHBOARD_PORT}; do
   svc="${name%%:*}"; port="${name##*:}"
   if port_in_use "${port}"; then
     echo "Error: Port ${port} for ${svc} appears to be in use. Set ${svc}_PORT to a free port or stop the other process." >&2
@@ -38,15 +38,23 @@ for name in API:${API_PORT}; do
   fi
 done
 
+echo "Starting Libretto services..."
+
 echo "Starting monolith on :${API_PORT}"
 PORT="${API_PORT}" bazel run //:libretto &
 pids+=("$!")
 
-# Simple readiness wait
-sleep 2
+echo "Starting dashboard on :${DASHBOARD_PORT}"
+go run cmd/dashboard/main.go -port="${DASHBOARD_PORT}" &
+pids+=("$!")
 
-echo "\nService started:"
-echo "- Monolith: http://localhost:${API_PORT}"
+# Simple readiness wait
+sleep 3
+
+echo "\nServices started:"
+echo "- Monolith API: http://localhost:${API_PORT}"
+echo "- Dashboard: http://localhost:${DASHBOARD_PORT}"
+echo "- Cross-project demo: http://localhost:${DASHBOARD_PORT}/demo"
 
 echo "\nPress Ctrl+C to stop..."
 

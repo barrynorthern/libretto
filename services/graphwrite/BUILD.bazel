@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//gen/go/libretto/graph/v1:graph_v1",
         "//gen/go/libretto/graph/v1/graphv1connect:graph_v1_connect",
+        "//internal/graphwrite:graphwrite_lib",
         "@com_connectrpc_connect//:go_default_library",
     ],
     visibility = ["//visibility:public"],
@@ -26,6 +27,8 @@ go_library(
         ":server",
         "//gen/go/libretto/graph/v1:graph_v1",
         "//gen/go/libretto/graph/v1/graphv1connect:graph_v1_connect",
+        "//internal/db",
+        "//internal/graphwrite:graphwrite_lib",
     ],
     visibility = ["//visibility:private"],
 )
