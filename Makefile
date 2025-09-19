@@ -29,6 +29,7 @@ help:
 	@echo "  test-unit        - Run unit tests only"
 	@echo "  test-integration - Run integration test suite"
 	@echo "  test-cross-project - Run cross-project continuity demo"
+	@echo "  demo-cross-project - Create Elena demo data for dashboard"
 	@echo "  test-coverage    - Run tests with coverage report"
 	@echo "  test-watch       - Run tests in watch mode"
 	@echo ""
@@ -105,6 +106,14 @@ test-cross-project:
 	@echo "🏰 Testing Elena Stormwind's journey across 3 books..."
 	bazel test //internal/graphwrite:cross_project_demo_test --test_output=all
 	@echo "✅ Cross-project entity continuity verified!"
+
+demo-cross-project:
+	@echo "Creating Elena Stormwind cross-project demo in dashboard database..."
+	go run cmd/demo-cross-project/main.go -db $(DB_FILE) -clean
+	@echo ""
+	@echo "🎛️  Demo created! Launch dashboard to explore:"
+	@echo "   make dashboard"
+	@echo "   Visit: http://localhost:$(DASHBOARD_PORT)"
 
 test-all: test-unit test-integration
 	@echo "Complete test suite finished"

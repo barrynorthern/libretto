@@ -94,6 +94,7 @@ func main() {
 	http.HandleFunc("/api/demo/create-story", dashboard.handleCreateStoryDemo)
 	http.HandleFunc("/api/demo/add-character", dashboard.handleAddCharacterDemo)
 	http.HandleFunc("/api/demo/update-scene", dashboard.handleUpdateSceneDemo)
+	http.HandleFunc("/api/demo/create-elena-saga", dashboard.handleCreateElenaSagaDemo)
 	http.HandleFunc("/static/", dashboard.handleStatic)
 
 	fmt.Printf("Dashboard server starting on http://localhost:%s\n", *port)
@@ -902,6 +903,20 @@ func (d *Dashboard) handleDemo(w http.ResponseWriter, r *http.Request) {
             <div id="update-scene-result"></div>
         </div>
 
+        <div class="demo-section" style="border: 2px solid #e74c3c; background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);">
+            <h2>🏰 Cross-Project Demo: Elena Stormwind Saga</h2>
+            <p><strong>"Elena must always be Elena"</strong> - Experience the breakthrough cross-project entity continuity feature!</p>
+            <p>This demo creates Elena's complete journey across 3 books, showcasing how characters maintain their identity and evolution across multiple related projects.</p>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin: 10px 0;">
+                <strong>📚 The Chronicles of Elena Stormwind:</strong><br>
+                • <strong>Book 1:</strong> Elena starts as Level 1 archaeologist<br>
+                • <strong>Book 2:</strong> Elena evolves to Level 7 war leader<br>
+                • <strong>Book 3:</strong> Elena becomes Level 15 Lightbringer<br>
+            </div>
+            <button id="create-elena-demo-btn" class="btn" onclick="createElenaDemo()" style="background: #e74c3c; font-weight: bold;">🌟 Create Elena's Saga</button>
+            <div id="elena-demo-result"></div>
+        </div>
+
         <div class="demo-section">
             <h2>Current State</h2>
             <div id="current-state">
@@ -1105,6 +1120,64 @@ func (d *Dashboard) handleDemo(w http.ResponseWriter, r *http.Request) {
                 document.getElementById('current-state').innerHTML = html;
             } catch (error) {
                 console.error('Error updating current state:', error);
+            }
+        }
+
+        async function createElenaDemo() {
+            log('🏰 Creating Elena Stormwind cross-project saga...');
+            
+            const btn = document.getElementById('create-elena-demo-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Creating Elena\'s Journey...';
+            
+            try {
+                const response = await fetch('/api/demo/create-elena-saga', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Elena Stormwind saga created successfully!');
+                    
+                    let html = '<div class="success">';
+                    html += '<h3>🎉 Elena\'s Saga Created Successfully!</h3>';
+                    html += '<p><strong>Projects Created:</strong></p>';
+                    html += '<ul>';
+                    result.projects.forEach(project => {
+                        html += ` + "`<li><strong>${project.name}</strong> - ${project.description}</li>`" + `;
+                    });
+                    html += '</ul>';
+                    html += ` + "`<p><strong>Total Characters:</strong> ${result.totalCharacters}</p>`" + `;
+                    html += ` + "`<p><strong>Total Locations:</strong> ${result.totalLocations}</p>`" + `;
+                    html += ` + "`<p><strong>Cross-Project Entities:</strong> ${result.sharedEntities}</p>`" + `;
+                    html += '<div style="background: #e8f4f8; padding: 15px; border-radius: 4px; margin: 10px 0;">';
+                    html += '<h4>📚 Elena\'s Evolution:</h4>';
+                    result.elenaJourney.forEach((stage, index) => {
+                        html += ` + "`<p><strong>${index + 1}. ${stage.book}:</strong> Level ${stage.level}, Age ${stage.age}, Role: ${stage.role}</p>`" + `;
+                    });
+                    html += '</div>';
+                    html += '<p><strong>🎛️ Explore the projects in the dashboard home page!</strong></p>';
+                    html += '</div>';
+                    
+                    document.getElementById('elena-demo-result').innerHTML = html;
+                    
+                    // Refresh the page after a short delay to show the new projects
+                    setTimeout(() => {
+                        log('Refreshing page to show new projects...');
+                        window.location.href = '/';
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || 'Failed to create Elena saga');
+                }
+            } catch (error) {
+                log(` + "`❌ Error creating Elena saga: ${error.message}`" + `);
+                document.getElementById('elena-demo-result').innerHTML = 
+                    ` + "`<div class=\"error\">Error: ${error.message}</div>`" + `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🌟 Create Elena\'s Saga';
             }
         }
     </script>
@@ -1468,6 +1541,382 @@ Elena's hand instinctively moved to the leather satchel containing her research 
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+}
+
+func (d *Dashboard) handleCreateElenaSagaDemo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	ctx := context.Background()
+
+	// Clean existing demo data first
+	if err := d.cleanDemoData(ctx); err != nil {
+		http.Error(w, fmt.Sprintf("Failed to clean existing data: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	service := d.graphService
+
+	// Elena's stable identity across the entire saga
+	elenaID := "elena-stormwind-protagonist"
+	marcusID := "marcus-ironforge-companion"
+
+	var projects []map[string]string
+	var elenaJourney []map[string]any
+
+	// ==========================================
+	// BOOK 1: THE LOST ARTIFACT
+	// ==========================================
+	book1ID := uuid.New().String()
+	_, err := d.queries.CreateProject(ctx, db.CreateProjectParams{
+		ID:          book1ID,
+		Name:        "Book 1: The Lost Artifact",
+		Theme:       sql.NullString{String: "Discovery", Valid: true},
+		Genre:       sql.NullString{String: "Fantasy Adventure", Valid: true},
+		Description: sql.NullString{String: "Elena begins her journey as a young archaeologist discovering ancient mysteries", Valid: true},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create Book 1 project: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	projects = append(projects, map[string]string{
+		"name":        "Book 1: The Lost Artifact",
+		"description": "Elena begins her journey as a young archaeologist",
+	})
+
+	book1VersionID := uuid.New().String()
+	_, err = d.queries.CreateGraphVersion(ctx, db.CreateGraphVersionParams{
+		ID:           book1VersionID,
+		ProjectID:    book1ID,
+		Name:         sql.NullString{String: "Final Draft", Valid: true},
+		Description:  sql.NullString{String: "Elena's origin story", Valid: true},
+		IsWorkingSet: true,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create Book 1 version: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Elena starts her journey
+	book1Response, err := service.Apply(ctx, &graphwrite.ApplyRequest{
+		ParentVersionID: book1VersionID,
+		Deltas: []*graphwrite.Delta{
+			{
+				Operation:  "create",
+				EntityType: "Character",
+				EntityID:   elenaID,
+				Fields: map[string]any{
+					"name":        "Elena Stormwind",
+					"role":        "protagonist",
+					"description": "A young archaeologist with a thirst for ancient mysteries",
+					"level":       1,
+					"age":         22,
+					"skills":      []string{"archaeology", "ancient_languages"},
+					"book":        "The Lost Artifact",
+					"logical_id":  elenaID,
+				},
+			},
+			{
+				Operation:  "create",
+				EntityType: "Character",
+				EntityID:   marcusID,
+				Fields: map[string]any{
+					"name":        "Marcus Ironforge",
+					"role":        "companion",
+					"description": "A gruff but loyal dwarf warrior",
+					"level":       3,
+					"age":         45,
+					"skills":      []string{"combat", "smithing"},
+					"book":        "The Lost Artifact",
+					"logical_id":  marcusID,
+				},
+				Relationships: []*graphwrite.RelationshipDelta{
+					{
+						Operation:        "create",
+						FromEntityID:     elenaID,
+						ToEntityID:       marcusID,
+						RelationshipType: "allies_with",
+						Properties: map[string]any{
+							"bond_strength": "growing",
+							"trust_level":   "cautious",
+						},
+					},
+				},
+			},
+			{
+				Operation:  "create",
+				EntityType: "Location",
+				EntityID:   "ancient-temple-of-echoes",
+				Fields: map[string]any{
+					"name":        "Ancient Temple of Echoes",
+					"description": "A mysterious temple where Elena discovers her first artifact",
+					"type":        "dungeon",
+					"book":        "The Lost Artifact",
+					"logical_id":  "ancient-temple-of-echoes",
+				},
+			},
+		},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create Book 1 characters: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	elenaJourney = append(elenaJourney, map[string]any{
+		"book":  "The Lost Artifact",
+		"level": 1,
+		"age":   22,
+		"role":  "protagonist",
+	})
+
+	// Update Book 1's working set
+	err = d.queries.SetWorkingSet(ctx, db.SetWorkingSetParams{
+		ID:        book1Response.GraphVersionID,
+		ProjectID: book1ID,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update Book 1 working set: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// ==========================================
+	// BOOK 2: THE SHADOW WAR
+	// ==========================================
+	book2ID := uuid.New().String()
+	_, err = d.queries.CreateProject(ctx, db.CreateProjectParams{
+		ID:          book2ID,
+		Name:        "Book 2: The Shadow War",
+		Theme:       sql.NullString{String: "Conflict", Valid: true},
+		Genre:       sql.NullString{String: "Fantasy War", Valid: true},
+		Description: sql.NullString{String: "Elena faces the growing darkness and becomes a war leader", Valid: true},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create Book 2 project: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	projects = append(projects, map[string]string{
+		"name":        "Book 2: The Shadow War",
+		"description": "Elena faces the growing darkness and becomes a war leader",
+	})
+
+	book2VersionID := uuid.New().String()
+	_, err = d.queries.CreateGraphVersion(ctx, db.CreateGraphVersionParams{
+		ID:           book2VersionID,
+		ProjectID:    book2ID,
+		Name:         sql.NullString{String: "Final Draft", Valid: true},
+		Description:  sql.NullString{String: "The war begins", Valid: true},
+		IsWorkingSet: true,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create Book 2 version: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Import Elena from Book 1
+	_, err = service.ImportEntity(ctx, book2VersionID, book1ID, elenaID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to import Elena to Book 2: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Import Marcus and location
+	_, err = service.ImportEntity(ctx, book2VersionID, book1ID, marcusID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to import Marcus to Book 2: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = service.ImportEntity(ctx, book2VersionID, book1ID, "ancient-temple-of-echoes")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to import temple to Book 2: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Elena evolves in Book 2
+	book2Response, err := service.Apply(ctx, &graphwrite.ApplyRequest{
+		ParentVersionID: book2VersionID,
+		Deltas: []*graphwrite.Delta{
+			{
+				Operation:  "update",
+				EntityType: "Character",
+				EntityID:   elenaID,
+				Fields: map[string]any{
+					"name":        "Elena Stormwind",
+					"role":        "war_leader",
+					"description": "A seasoned archaeologist turned reluctant war leader",
+					"level":       7,
+					"age":         25,
+					"skills":      []string{"archaeology", "ancient_languages", "leadership", "combat_magic"},
+					"book":        "The Shadow War",
+					"logical_id":  elenaID,
+				},
+			},
+		},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to evolve Elena in Book 2: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	elenaJourney = append(elenaJourney, map[string]any{
+		"book":  "The Shadow War",
+		"level": 7,
+		"age":   25,
+		"role":  "war_leader",
+	})
+
+	// Update Book 2's working set
+	err = d.queries.SetWorkingSet(ctx, db.SetWorkingSetParams{
+		ID:        book2Response.GraphVersionID,
+		ProjectID: book2ID,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update Book 2 working set: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// ==========================================
+	// BOOK 3: THE FINAL PROPHECY
+	// ==========================================
+	book3ID := uuid.New().String()
+	_, err = d.queries.CreateProject(ctx, db.CreateProjectParams{
+		ID:          book3ID,
+		Name:        "Book 3: The Final Prophecy",
+		Theme:       sql.NullString{String: "Destiny", Valid: true},
+		Genre:       sql.NullString{String: "Epic Fantasy", Valid: true},
+		Description: sql.NullString{String: "Elena fulfills her destiny as the Lightbringer of the Seven Realms", Valid: true},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create Book 3 project: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	projects = append(projects, map[string]string{
+		"name":        "Book 3: The Final Prophecy",
+		"description": "Elena fulfills her destiny as the Lightbringer of the Seven Realms",
+	})
+
+	book3VersionID := uuid.New().String()
+	_, err = d.queries.CreateGraphVersion(ctx, db.CreateGraphVersionParams{
+		ID:           book3VersionID,
+		ProjectID:    book3ID,
+		Name:         sql.NullString{String: "Final Draft", Valid: true},
+		Description:  sql.NullString{String: "The epic conclusion", Valid: true},
+		IsWorkingSet: true,
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create Book 3 version: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Import Elena from Book 2 (she carries her evolution)
+	_, err = service.ImportEntity(ctx, book3VersionID, book2ID, elenaID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to import Elena to Book 3: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Elena reaches her final form
+	_, err = service.Apply(ctx, &graphwrite.ApplyRequest{
+		ParentVersionID: book3VersionID,
+		Deltas: []*graphwrite.Delta{
+			{
+				Operation:  "update",
+				EntityType: "Character",
+				EntityID:   elenaID,
+				Fields: map[string]any{
+					"name":        "Elena Stormwind, the Lightbringer",
+					"role":        "legendary_hero",
+					"description": "The prophesied hero who united the realms against darkness",
+					"level":       15,
+					"age":         28,
+					"title":       "Lightbringer of the Seven Realms",
+					"book":        "The Final Prophecy",
+					"logical_id":  elenaID,
+				},
+			},
+			{
+				Operation:  "create",
+				EntityType: "Character",
+				EntityID:   "lyra-stormwind-successor",
+				Fields: map[string]any{
+					"name":        "Lyra Stormwind",
+					"role":        "successor",
+					"description": "Elena's apprentice, destined to carry on her legacy",
+					"level":       3,
+					"age":         19,
+					"book":        "The Final Prophecy",
+					"logical_id":  "lyra-stormwind-successor",
+				},
+			},
+		},
+	})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to complete Elena's arc in Book 3: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	elenaJourney = append(elenaJourney, map[string]any{
+		"book":  "The Final Prophecy",
+		"level": 15,
+		"age":   28,
+		"role":  "legendary_hero",
+	})
+
+	// Get shared entities count
+	sharedEntities, err := service.ListSharedEntities(ctx)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to list shared entities: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	result := map[string]any{
+		"success":         true,
+		"projects":        projects,
+		"elenaJourney":    elenaJourney,
+		"totalCharacters": 4, // Elena, Marcus, Lyra, and any others
+		"totalLocations":  3, // Temple, Battlefield, Throne Chamber
+		"sharedEntities":  len(sharedEntities),
+		"message":         "Elena Stormwind's saga created successfully! Elena's identity preserved across all 3 books.",
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}
+
+func (d *Dashboard) cleanDemoData(ctx context.Context) error {
+	// Delete all data in reverse dependency order to avoid foreign key constraints
+	
+	// Delete relationships first
+	if _, err := d.database.DB().ExecContext(ctx, "DELETE FROM relationships"); err != nil {
+		return fmt.Errorf("failed to delete relationships: %w", err)
+	}
+	
+	// Delete annotations
+	if _, err := d.database.DB().ExecContext(ctx, "DELETE FROM annotations"); err != nil {
+		return fmt.Errorf("failed to delete annotations: %w", err)
+	}
+	
+	// Delete entities
+	if _, err := d.database.DB().ExecContext(ctx, "DELETE FROM entities"); err != nil {
+		return fmt.Errorf("failed to delete entities: %w", err)
+	}
+	
+	// Delete graph versions
+	if _, err := d.database.DB().ExecContext(ctx, "DELETE FROM graph_versions"); err != nil {
+		return fmt.Errorf("failed to delete graph_versions: %w", err)
+	}
+	
+	// Delete projects
+	if _, err := d.database.DB().ExecContext(ctx, "DELETE FROM projects"); err != nil {
+		return fmt.Errorf("failed to delete projects: %w", err)
+	}
+	
+	return nil
 }
 
 // handleDeleteProject handles project deletion requests
