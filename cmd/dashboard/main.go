@@ -9,6 +9,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/barrynorthern/libretto/internal/db"
 	"github.com/barrynorthern/libretto/internal/graphwrite"
@@ -319,9 +320,31 @@ func (d *Dashboard) handleProject(w http.ResponseWriter, r *http.Request) {
 	var entityCounts map[string]int64
 	
 	if workingSetVersion != nil {
-		entities, err = d.queries.ListEntitiesByVersion(ctx, workingSetVersion.ID)
+		// Use GraphWrite service to get entities with logical IDs
+		graphEntities, err := d.graphService.ListEntities(ctx, workingSetVersion.ID, graphwrite.EntityFilter{})
 		if err != nil {
 			log.Printf("Failed to get entities: %v", err)
+		} else {
+			// Convert GraphWrite entities to db.Entity format for template compatibility
+			entities = make([]db.Entity, len(graphEntities))
+			for i, gEntity := range graphEntities {
+				// Parse timestamps
+				createdAt, _ := time.Parse("2006-01-02T15:04:05Z", gEntity.CreatedAt)
+				updatedAt, _ := time.Parse("2006-01-02T15:04:05Z", gEntity.UpdatedAt)
+				
+				// Marshal data back to JSON
+				dataBytes, _ := json.Marshal(gEntity.Data)
+				
+				entities[i] = db.Entity{
+					ID:         gEntity.ID, // This is now the logical ID
+					VersionID:  gEntity.VersionID,
+					EntityType: gEntity.EntityType,
+					Name:       gEntity.Name,
+					Data:       dataBytes,
+					CreatedAt:  createdAt,
+					UpdatedAt:  updatedAt,
+				}
+			}
 		}
 
 		relationships, err = d.queries.ListRelationshipsByVersion(ctx, workingSetVersion.ID)
